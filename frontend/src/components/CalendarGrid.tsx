@@ -63,7 +63,6 @@ export default function CalendarGrid({ bookings, startDate, view, startHour = 8,
     const map = new Map<number, Booking[]>();
     columns.forEach((_, i) => map.set(i, []));
     bookings.forEach((b) => {
-      // Extract YYYY-MM-DD from UTC timestamp
       const bDateStr = b.startsAt.slice(0, 10);
       const colIndex = columns.findIndex((c) => {
         const y = c.getFullYear();
@@ -105,22 +104,56 @@ export default function CalendarGrid({ bookings, startDate, view, startHour = 8,
   }
 
   return (
-    <div className="premium-card-static overflow-hidden flex flex-col flex-1 min-h-0">
-      <div className="flex border-b border-slate-200 shrink-0">
+    <div className="glass-panel-static overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="flex shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <div className="w-16 shrink-0" />
-        {columns.map((d, i) => { const { weekday, day } = formatDayHeader(d); const today = isToday(d); return (<div key={i} className={`flex-1 text-center py-2 border-l border-slate-100 ${today ? 'bg-warm-50' : ''}`}><div className={`text-xs font-medium ${today ? 'text-primary' : 'text-slate-500'}`}>{weekday}</div><div className={`text-lg font-semibold font-display ${today ? 'text-primary' : 'text-slate-900'}`}>{day}</div></div>); })}
+        {columns.map((d, i) => {
+          const { weekday, day } = formatDayHeader(d);
+          const today = isToday(d);
+          return (
+            <div
+              key={i}
+              className="flex-1 text-center py-2"
+              style={{
+                borderLeft: '1px solid var(--color-border)',
+                background: today ? 'var(--color-accent-subtle)' : 'transparent',
+              }}
+            >
+              <div className={`text-xs font-medium ${today ? 'text-[var(--color-accent)]' : ''}`} style={today ? {} : { color: 'var(--color-text-muted)' }}>{weekday}</div>
+              <div className={`text-lg font-semibold font-display ${today ? 'text-[var(--color-accent)]' : 'text-white'}`}>{day}</div>
+            </div>
+          );
+        })}
       </div>
       <div ref={gridRef} className="flex-1 min-h-0 overflow-y-auto relative">
         <div className="flex relative" style={{ height: `${totalHeight}px` }}>
           <div className="w-16 shrink-0 relative">
-            {hours.map((h) => (<div key={h} className="absolute right-2 text-xs text-slate-400 -translate-y-1/2" style={{ top: `${(h - startHour) * hourHeight}px` }}>{formatHour(h)}</div>))}
+            {hours.map((h) => (
+              <div key={h} className="absolute right-2 text-xs -translate-y-1/2 font-mono-custom" style={{ top: `${(h - startHour) * hourHeight}px`, color: 'var(--color-text-muted)' }}>{formatHour(h)}</div>
+            ))}
           </div>
           {columns.map((colDate, colIdx) => (
-            <div key={colIdx} className="flex-1 border-l border-slate-100 relative cursor-pointer" onClick={(e) => handleColumnClick(colIdx, e)}>
-              {hours.map((h) => (<div key={h} className="absolute left-0 right-0 border-t border-slate-100" style={{ top: `${(h - startHour) * hourHeight}px` }} />))}
-              {hours.map((h) => (<div key={`half-${h}`} className="absolute left-0 right-0 border-t border-slate-50" style={{ top: `${(h - startHour) * hourHeight + hourHeight / 2}px` }} />))}
+            <div
+              key={colIdx}
+              className="flex-1 relative cursor-pointer"
+              style={{ borderLeft: '1px solid var(--color-border)' }}
+              onClick={(e) => handleColumnClick(colIdx, e)}
+            >
+              {hours.map((h) => (
+                <div key={h} className="absolute left-0 right-0" style={{ top: `${(h - startHour) * hourHeight}px`, borderTop: '1px solid var(--color-border)' }} />
+              ))}
+              {hours.map((h) => (
+                <div key={`half-${h}`} className="absolute left-0 right-0" style={{ top: `${(h - startHour) * hourHeight + hourHeight / 2}px`, borderTop: '1px solid rgba(255,255,255,0.03)' }} />
+              ))}
               {(columnBookings.get(colIdx) || []).map((b) => { const { topPx, heightPx } = getBookingPosition(b); return (<BookingBlock key={b.id} booking={b} topPx={topPx} heightPx={heightPx} onClick={onBookingClick} />); })}
-              {showNowLine && isToday(colDate) && (<div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: `${nowTop}px` }}><div className="flex items-center"><div className="w-2 h-2 rounded-full bg-red-500 -ml-1" /><div className="flex-1 h-0.5 bg-red-500" /></div></div>)}
+              {showNowLine && isToday(colDate) && (
+                <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: `${nowTop}px` }}>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 -ml-1" style={{ backgroundColor: 'var(--color-accent)', borderRadius: '50%' }} />
+                    <div className="flex-1 h-0.5" style={{ backgroundColor: 'var(--color-accent)' }} />
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

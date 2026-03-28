@@ -28,30 +28,58 @@ export default function RevenueSidebar({ merchantId, from, to }: RevenueSidebarP
   }, [merchantId, from, to]);
 
   return (
-    <div className={`hidden lg:flex flex-col premium-card-static shrink-0 transition-all ${collapsed ? 'w-10' : 'w-[280px]'}`}>
-      <button onClick={() => setCollapsed(!collapsed)} className="p-2 text-slate-400 hover:text-slate-600 self-end" title={collapsed ? 'Expand stats' : 'Collapse stats'}>
+    <div className={`hidden lg:flex flex-col glass-panel-static shrink-0 transition-all ${collapsed ? 'w-10' : 'w-[280px]'}`}>
+      <button onClick={() => setCollapsed(!collapsed)} className="p-2 self-end text-gray-500 hover:text-white" title={collapsed ? 'Expand stats' : 'Collapse stats'}>
         <ChevronRight className={`w-4 h-4 transition-transform ${collapsed ? '' : 'rotate-180'}`} />
       </button>
       {collapsed ? (
         <div className="flex flex-col items-center gap-3 py-4">
-          <DollarSign className="w-4 h-4 text-slate-400" />
-          <CalendarCheck className="w-4 h-4 text-slate-400" />
-          <TrendingUp className="w-4 h-4 text-slate-400" />
+          <DollarSign className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+          <CalendarCheck className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+          <TrendingUp className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
         </div>
       ) : loading ? (
-        <div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex-1 flex items-center justify-center"><div className="w-5 h-5 border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} /></div>
       ) : stats ? (
         <div className="px-4 pb-4 space-y-4">
-          <h3 className="text-sm font-semibold text-slate-900 font-display">Weekly Stats</h3>
-          <div className="space-y-1"><div className="flex items-center gap-1.5 text-xs text-slate-500"><DollarSign className="w-3.5 h-3.5" />Revenue Booked</div><div className="text-2xl font-bold text-slate-900 font-display">{formatDollars(stats.revenueBookedCents)}</div></div>
-          <div className="space-y-1"><div className="flex items-center gap-1.5 text-xs text-slate-500"><DollarSign className="w-3.5 h-3.5 text-green-500" />Revenue Completed</div><div className="text-xl font-bold text-green-600 font-display">{formatDollars(stats.revenueCompletedCents)}</div></div>
-          <hr className="border-slate-50" />
-          <div className="space-y-1"><div className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarCheck className="w-3.5 h-3.5" />Bookings</div><div className="text-lg font-semibold text-slate-900 font-display">{stats.bookingsTotal}</div><div className="flex gap-3 text-xs text-slate-500"><span className="text-green-600">{stats.bookingsCompleted} completed</span>{stats.bookingsCancelled > 0 && <span className="text-red-500">{stats.bookingsCancelled} cancelled</span>}{stats.bookingsNoShow > 0 && <span className="text-slate-400">{stats.bookingsNoShow} no-show</span>}</div></div>
-          <div className="space-y-1.5"><div className="flex items-center justify-between text-xs"><span className="text-slate-500 flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5" />Completion Rate</span><span className="font-semibold text-slate-900">{formatPercent(stats.completionRate)}</span></div><div className="w-full bg-warm-50 rounded-full h-1.5"><div className="bg-green-500 rounded-full h-1.5 transition-all" style={{ width: `${Math.round(stats.completionRate * 100)}%` }} /></div></div>
-          <div className="space-y-1.5"><div className="flex items-center justify-between text-xs"><span className="text-slate-500 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Walk-in Ratio</span><span className="font-semibold text-slate-900">{formatPercent(stats.walkInRatio)}</span></div><div className="text-xs text-slate-400">{stats.walkInCount} walk-in{stats.walkInCount !== 1 ? 's' : ''} this week</div></div>
+          <h3 className="text-sm font-semibold text-white font-display">Weekly Stats</h3>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-mono-custom" style={{ color: 'var(--color-text-muted)' }}><DollarSign className="w-3.5 h-3.5" />Revenue Booked</div>
+            <div className="text-2xl font-bold text-white font-display">{formatDollars(stats.revenueBookedCents)}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-mono-custom" style={{ color: 'var(--color-text-muted)' }}><DollarSign className="w-3.5 h-3.5" style={{ color: 'var(--color-success)' }} />Revenue Completed</div>
+            <div className="text-xl font-bold font-display" style={{ color: 'var(--color-success)' }}>{formatDollars(stats.revenueCompletedCents)}</div>
+          </div>
+          <hr style={{ borderColor: 'var(--color-border)' }} />
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-mono-custom" style={{ color: 'var(--color-text-muted)' }}><CalendarCheck className="w-3.5 h-3.5" />Bookings</div>
+            <div className="text-lg font-semibold text-white font-display">{stats.bookingsTotal}</div>
+            <div className="flex gap-3 text-xs">
+              <span style={{ color: 'var(--color-success)' }}>{stats.bookingsCompleted} completed</span>
+              {stats.bookingsCancelled > 0 && <span style={{ color: 'var(--color-danger)' }}>{stats.bookingsCancelled} cancelled</span>}
+              {stats.bookingsNoShow > 0 && <span style={{ color: 'var(--color-text-muted)' }}>{stats.bookingsNoShow} no-show</span>}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}><TrendingUp className="w-3.5 h-3.5" />Completion Rate</span>
+              <span className="font-semibold text-white">{formatPercent(stats.completionRate)}</span>
+            </div>
+            <div className="w-full h-1.5" style={{ background: 'var(--color-bg-surface)' }}>
+              <div className="h-1.5 transition-all" style={{ width: `${Math.round(stats.completionRate * 100)}%`, backgroundColor: 'var(--color-success)' }} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}><Users className="w-3.5 h-3.5" />Walk-in Ratio</span>
+              <span className="font-semibold text-white">{formatPercent(stats.walkInRatio)}</span>
+            </div>
+            <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{stats.walkInCount} walk-in{stats.walkInCount !== 1 ? 's' : ''} this week</div>
+          </div>
         </div>
       ) : (
-        <div className="px-4 pb-4 text-sm text-slate-400">No data</div>
+        <div className="px-4 pb-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>No data</div>
       )}
     </div>
   );

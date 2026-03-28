@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Patch, Delete, Query, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Query, Param, Body, UseGuards, SetMetadata } from '@nestjs/common';
 import { IntakeQuestionService } from './intake-question.service';
+import { AuthGuard } from '../auth/auth.guard';
+import { PlanGuard, REQUIRED_PLAN_KEY } from '../plan/plan.guard';
 import type { QuestionType } from '@prisma/client';
 
 @Controller('intake-questions')
@@ -12,6 +14,8 @@ export class IntakeQuestionController {
   }
 
   @Post()
+  @UseGuards(AuthGuard, PlanGuard)
+  @SetMetadata(REQUIRED_PLAN_KEY, 'PRO')
   create(@Body() body: {
     serviceId: string;
     question: string;

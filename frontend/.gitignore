@@ -14,6 +14,10 @@ dist-ssr
 .env
 .env.local
 
+# Capacitor native projects (add to repo after first successful Xcode build)
+ios/
+android/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

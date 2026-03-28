@@ -8,37 +8,37 @@ import PushPrompt from '../../components/PushPrompt';
 import type { Booking, BookingStatus, BookingPart, PartStatus, Service, Customer } from '../../types';
 
 const STATUS_COLORS: Record<BookingStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  CONFIRMED: 'bg-blue-100 text-blue-800',
-  CHECKED_IN: 'bg-cyan-100 text-cyan-800',
-  WAITING_ON_PARTS: 'bg-purple-100 text-purple-800',
-  IN_PROGRESS: 'bg-orange-100 text-orange-800',
-  COMPLETED: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-red-100 text-red-800',
-  NO_SHOW: 'bg-slate-100 text-slate-600',
+  PENDING: 'status-pending',
+  CONFIRMED: 'status-confirmed',
+  CHECKED_IN: 'status-checked-in',
+  WAITING_ON_PARTS: 'status-waiting-parts',
+  IN_PROGRESS: 'status-in-progress',
+  COMPLETED: 'status-completed',
+  CANCELLED: 'status-cancelled',
+  NO_SHOW: 'status-no-show',
 };
 
 const STATUS_TRANSITIONS: Record<BookingStatus, { label: string; next: BookingStatus; color: string }[]> = {
   PENDING: [
-    { label: 'Confirm', next: 'CONFIRMED', color: 'bg-blue-600 text-white' },
-    { label: 'Cancel', next: 'CANCELLED', color: 'bg-red-100 text-red-700' },
+    { label: 'Confirm', next: 'CONFIRMED', color: 'status-confirmed' },
+    { label: 'Cancel', next: 'CANCELLED', color: 'status-cancelled' },
   ],
   CONFIRMED: [
-    { label: 'Check In', next: 'CHECKED_IN', color: 'bg-cyan-600 text-white' },
-    { label: 'Cancel', next: 'CANCELLED', color: 'bg-red-100 text-red-700' },
-    { label: 'No-Show', next: 'NO_SHOW', color: 'bg-slate-200 text-slate-700' },
+    { label: 'Check In', next: 'CHECKED_IN', color: 'status-checked-in' },
+    { label: 'Cancel', next: 'CANCELLED', color: 'status-cancelled' },
+    { label: 'No-Show', next: 'NO_SHOW', color: 'status-no-show' },
   ],
   CHECKED_IN: [
-    { label: 'Start', next: 'IN_PROGRESS', color: 'bg-orange-600 text-white' },
-    { label: 'Waiting on Parts', next: 'WAITING_ON_PARTS', color: 'bg-purple-600 text-white' },
-    { label: 'Cancel', next: 'CANCELLED', color: 'bg-red-100 text-red-700' },
-    { label: 'No-Show', next: 'NO_SHOW', color: 'bg-slate-200 text-slate-700' },
+    { label: 'Start', next: 'IN_PROGRESS', color: 'status-in-progress' },
+    { label: 'Waiting on Parts', next: 'WAITING_ON_PARTS', color: 'status-waiting-parts' },
+    { label: 'Cancel', next: 'CANCELLED', color: 'status-cancelled' },
+    { label: 'No-Show', next: 'NO_SHOW', color: 'status-no-show' },
   ],
   WAITING_ON_PARTS: [
-    { label: 'Parts Ready', next: 'CHECKED_IN', color: 'bg-cyan-600 text-white' },
+    { label: 'Parts Ready', next: 'CHECKED_IN', color: 'status-checked-in' },
   ],
   IN_PROGRESS: [
-    { label: 'Complete', next: 'COMPLETED', color: 'bg-green-600 text-white' },
+    { label: 'Complete', next: 'COMPLETED', color: 'status-completed' },
   ],
   COMPLETED: [],
   CANCELLED: [],
@@ -46,9 +46,9 @@ const STATUS_TRANSITIONS: Record<BookingStatus, { label: string; next: BookingSt
 };
 
 const PART_STATUS_COLORS: Record<PartStatus, string> = {
-  NEEDED: 'bg-yellow-100 text-yellow-800',
-  ORDERED: 'bg-blue-100 text-blue-800',
-  RECEIVED: 'bg-green-100 text-green-800',
+  NEEDED: 'status-pending',
+  ORDERED: 'status-confirmed',
+  RECEIVED: 'status-completed',
 };
 
 function formatDateTime(iso: string) {
@@ -129,7 +129,6 @@ export default function BookingsPage() {
     setLoading(true);
     const params = new URLSearchParams({ merchantId: merchant.id });
     if (filter) params.set('status', filter);
-    // For calendar, scope to visible range
     if (viewMode === 'calendar') {
       const range = calView === 'week' ? getWeekRange(currentDate) : getDayRange(currentDate);
       params.set('from', range.from + 'T00:00:00');
@@ -142,7 +141,6 @@ export default function BookingsPage() {
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
-  // Load services + customers for walk-in modal
   useEffect(() => {
     if (!merchant) return;
     api.get<Service[]>(`/services?merchantId=${merchant.id}&activeOnly=true`).then(setServices);
@@ -218,7 +216,6 @@ export default function BookingsPage() {
     }
   }
 
-  // Parts management
   async function addPart() {
     if (!selected || !newPartName.trim()) return;
     const part = await api.post<BookingPart>('/booking-parts', {
@@ -260,31 +257,32 @@ export default function BookingsPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Push notification prompt — button-triggered, never automatic */}
       <div className="mb-4">
         <PushPrompt />
       </div>
 
       {/* Header with view toggle + nav */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3 shrink-0">
-        <h1 className="text-2xl font-bold text-slate-900 font-display tracking-tight">Bookings</h1>
+        <h1 className="text-2xl font-bold text-white font-display tracking-tight">Bookings</h1>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* View mode toggle */}
-          <div className="flex bg-slate-100 rounded-lg p-0.5">
+          <div className="flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'calendar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                viewMode === 'calendar' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
               }`}
+              style={viewMode === 'calendar' ? { background: 'var(--color-accent-muted)' } : {}}
             >
               <Calendar className="w-4 h-4" /> Calendar
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                viewMode === 'list' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
               }`}
+              style={viewMode === 'list' ? { background: 'var(--color-accent-muted)' } : {}}
             >
               <List className="w-4 h-4" /> List
             </button>
@@ -292,20 +290,22 @@ export default function BookingsPage() {
 
           {/* Calendar sub-view */}
           {viewMode === 'calendar' && (
-            <div className="flex bg-slate-100 rounded-lg p-0.5">
+            <div className="flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
               <button
                 onClick={() => setCalView('day')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  calView === 'day' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  calView === 'day' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
                 }`}
+                style={calView === 'day' ? { background: 'var(--color-accent-muted)' } : {}}
               >
                 Day
               </button>
               <button
                 onClick={() => setCalView('week')}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  calView === 'week' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  calView === 'week' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
                 }`}
+                style={calView === 'week' ? { background: 'var(--color-accent-muted)' } : {}}
               >
                 Week
               </button>
@@ -339,31 +339,31 @@ export default function BookingsPage() {
         <div className="flex items-center gap-3 mb-4 shrink-0">
           <button
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-lg hover:bg-warm-50 text-slate-600"
+            className="p-1.5 text-gray-400 hover:text-white transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={() => navigate(0)}
-            className="px-3 py-1 rounded-lg hover:bg-warm-50 text-sm font-medium text-slate-600"
+            className="px-3 py-1 text-sm font-medium btn-ghost"
           >
             Today
           </button>
           <button
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-lg hover:bg-warm-50 text-slate-600"
+            className="p-1.5 text-gray-400 hover:text-white transition-colors"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
-          <span className="text-sm font-medium text-slate-700 font-display">{dateRange.label}</span>
+          <span className="text-sm font-medium font-display" style={{ color: 'var(--color-text-secondary)' }}>{dateRange.label}</span>
         </div>
       )}
 
       {/* Content + Revenue Sidebar */}
       {loading ? (
-        <div className="premium-card-static p-6 text-center">
-          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <div className="text-slate-500 text-sm font-display">Loading bookings...</div>
+        <div className="glass-panel-static p-6 text-center">
+          <div className="w-5 h-5 border-2 border-t-transparent animate-spin mx-auto mb-2" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+          <div className="text-sm font-display" style={{ color: 'var(--color-text-secondary)' }}>Loading bookings...</div>
         </div>
       ) : viewMode === 'calendar' ? (
         <div className="flex flex-1 min-h-0 gap-4">
@@ -387,39 +387,42 @@ export default function BookingsPage() {
       ) : (
         /* List view */
         bookings.length === 0 ? (
-          <div className="premium-card-static p-12 text-center">
-            <div className="text-slate-500 font-display">No bookings {filter ? `with status "${filter.replace(/_/g, ' ')}"` : 'yet'}.</div>
+          <div className="glass-panel-static p-12 text-center">
+            <div className="font-display" style={{ color: 'var(--color-text-secondary)' }}>No bookings {filter ? `with status "${filter.replace(/_/g, ' ')}"` : 'yet'}.</div>
           </div>
         ) : (
-          <div className="premium-card-static overflow-hidden">
+          <div className="glass-panel-static overflow-hidden">
             <table className="w-full">
-              <thead className="bg-warm-50 border-b border-slate-100">
+              <thead style={{ background: 'var(--color-bg-surface)', borderBottom: '1px solid var(--color-border)' }}>
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Date / Time</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Customer</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Service</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Vehicle</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Status</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Date / Time</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Customer</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Service</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Vehicle</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
                 {bookings.map((b) => (
                   <tr
                     key={b.id}
-                    className="hover:bg-warm-50 cursor-pointer"
+                    className="cursor-pointer transition-colors"
+                    style={{ borderColor: 'var(--color-border)' }}
                     onClick={() => setSelected(b)}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255, 179, 71, 0.04)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; }}
                   >
-                    <td className="px-4 py-3 text-sm text-slate-900">{formatDateTime(b.startsAt)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">
+                    <td className="px-4 py-3 text-sm text-white">{formatDateTime(b.startsAt)}</td>
+                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                       {b.customer?.name || '—'}
-                      {b.isWalkIn && <span className="ml-1 text-[10px] text-orange-600 font-medium">(walk-in)</span>}
+                      {b.isWalkIn && <span className="ml-1 text-[10px] font-medium" style={{ color: 'var(--color-accent)' }}>(walk-in)</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{b.service?.name || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">
+                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{b.service?.name || '—'}</td>
+                    <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                       {b.vehicle ? `${b.vehicle.year || ''} ${b.vehicle.make || ''} ${b.vehicle.model || ''}`.trim() : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${STATUS_COLORS[b.status]}`}>
+                      <span className={`text-xs font-medium px-2 py-1 ${STATUS_COLORS[b.status]}`}>
                         {b.status.replace(/_/g, ' ')}
                       </span>
                     </td>
@@ -433,46 +436,49 @@ export default function BookingsPage() {
 
       {/* Detail panel (slide-out) */}
       {selected && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex justify-end animate-fade-in">
-          <div className="bg-white w-full max-w-md shadow-[var(--shadow-elevated)] overflow-y-auto animate-slide-in-right rounded-l-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <h3 className="text-lg font-semibold font-display">Booking Details</h3>
-              <button onClick={() => { setSelected(null); setAddingPart(false); }} className="text-slate-400 hover:text-slate-600">
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-end animate-fade-in">
+          <div
+            className="w-full max-w-md overflow-y-auto animate-slide-in-right"
+            style={{ background: 'var(--color-bg-elevated)', borderLeft: '1px solid var(--color-border-accent)' }}
+          >
+            <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <h3 className="text-lg font-semibold font-display text-white">Booking Details</h3>
+              <button onClick={() => { setSelected(null); setAddingPart(false); }} className="text-gray-500 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-4 space-y-5">
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Status</div>
+                <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Status</div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium px-2 py-1 rounded-full ${STATUS_COLORS[selected.status]}`}>
+                  <span className={`text-sm font-medium px-2 py-1 ${STATUS_COLORS[selected.status]}`}>
                     {selected.status.replace(/_/g, ' ')}
                   </span>
                   {selected.isWalkIn && (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">Walk-in</span>
+                    <span className="text-xs font-medium px-2 py-0.5 status-in-progress">Walk-in</span>
                   )}
                 </div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Date & Time</div>
-                <div className="text-sm font-medium font-display">{formatDateTime(selected.startsAt)}</div>
+                <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Date & Time</div>
+                <div className="text-sm font-medium font-display text-white">{formatDateTime(selected.startsAt)}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Service</div>
-                <div className="text-sm font-medium font-display">
+                <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Service</div>
+                <div className="text-sm font-medium font-display text-white">
                   {selected.service?.name} — {formatPrice(selected.service?.priceCents || 0)}
                 </div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Customer</div>
-                <div className="text-sm font-medium font-display">{selected.customer?.name}</div>
-                {selected.customer?.email && <div className="text-sm text-slate-500">{selected.customer.email}</div>}
-                {selected.customer?.phone && <div className="text-sm text-slate-500">{selected.customer.phone}</div>}
+                <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Customer</div>
+                <div className="text-sm font-medium font-display text-white">{selected.customer?.name}</div>
+                {selected.customer?.email && <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{selected.customer.email}</div>}
+                {selected.customer?.phone && <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{selected.customer.phone}</div>}
               </div>
               {selected.vehicle && (
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Vehicle</div>
-                  <div className="text-sm font-medium">
+                  <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Vehicle</div>
+                  <div className="text-sm font-medium text-white">
                     {[selected.vehicle.year, selected.vehicle.make, selected.vehicle.model, selected.vehicle.trim]
                       .filter(Boolean)
                       .join(' ')}
@@ -481,48 +487,47 @@ export default function BookingsPage() {
               )}
               {selected.intakeData && Object.keys(selected.intakeData).length > 0 && (
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Vehicle Intake</div>
-                  <div className="premium-card-static p-3 text-sm space-y-1">
+                  <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Vehicle Intake</div>
+                  <div className="glass-panel-static p-3 text-sm space-y-1">
                     {Object.entries(selected.intakeData).map(([key, val]) => (
                       <div key={key}>
-                        <span className="font-medium text-slate-700">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}:</span>{' '}
-                        <span className="text-slate-600">{Array.isArray(val) ? (val as string[]).join(', ') : String(val)}</span>
+                        <span className="font-medium text-white">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}:</span>{' '}
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{Array.isArray(val) ? (val as string[]).join(', ') : String(val)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              {/* Deposit info */}
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Deposit</div>
+                <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Deposit</div>
                 {selected.depositAmountCents && selected.depositPaidAt ? (
-                  <div className="text-sm font-medium text-green-600">
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-success)' }}>
                     {formatPrice(selected.depositAmountCents)} paid on{' '}
                     {new Date(selected.depositPaidAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 ) : (
-                  <div className="text-sm text-slate-400">None</div>
+                  <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>None</div>
                 )}
               </div>
 
               {selected.notes && (
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-400 font-medium mb-1">Notes</div>
-                  <div className="text-sm">{selected.notes}</div>
+                  <div className="text-xs uppercase tracking-wide font-medium mb-1 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>Notes</div>
+                  <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{selected.notes}</div>
                 </div>
               )}
 
               {/* Parts section */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs uppercase tracking-wide text-slate-400 font-medium flex items-center gap-1.5">
+                  <div className="text-xs uppercase tracking-wide font-medium flex items-center gap-1.5 font-mono-custom" style={{ color: 'var(--color-text-muted)' }}>
                     <Package className="w-3.5 h-3.5" />
                     Parts
                   </div>
                   {!addingPart && (
                     <button
                       onClick={() => setAddingPart(true)}
-                      className="text-xs text-primary hover:text-primary-dark font-medium"
+                      className="text-xs font-medium" style={{ color: 'var(--color-accent)' }}
                     >
                       + Add Part
                     </button>
@@ -532,17 +537,17 @@ export default function BookingsPage() {
                 {(selected.parts && selected.parts.length > 0) ? (
                   <div className="space-y-2">
                     {selected.parts.map((part) => (
-                      <div key={part.id} className="flex items-center gap-2 premium-card-static px-3 py-2">
+                      <div key={part.id} className="flex items-center gap-2 glass-panel-static px-3 py-2">
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-slate-900 truncate">{part.partName}</div>
+                          <div className="text-sm font-medium text-white truncate">{part.partName}</div>
                           {part.partNumber && (
-                            <div className="text-[10px] text-slate-400 truncate">#{part.partNumber}</div>
+                            <div className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>#{part.partNumber}</div>
                           )}
                         </div>
                         <select
                           value={part.status}
                           onChange={(e) => updatePartStatus(part.id, e.target.value as PartStatus)}
-                          className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer ${PART_STATUS_COLORS[part.status]}`}
+                          className={`text-xs font-medium px-2 py-1 border-0 cursor-pointer ${PART_STATUS_COLORS[part.status]}`}
                         >
                           <option value="NEEDED">Needed</option>
                           <option value="ORDERED">Ordered</option>
@@ -550,7 +555,7 @@ export default function BookingsPage() {
                         </select>
                         <button
                           onClick={() => removePart(part.id)}
-                          className="text-slate-300 hover:text-red-500 text-xs"
+                          className="text-gray-600 hover:text-red-400 text-xs"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -558,12 +563,11 @@ export default function BookingsPage() {
                     ))}
                   </div>
                 ) : !addingPart ? (
-                  <div className="text-sm text-slate-400">No parts tracked</div>
+                  <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>No parts tracked</div>
                 ) : null}
 
-                {/* Add part form */}
                 {addingPart && (
-                  <div className="mt-2 space-y-2 premium-card-static p-3">
+                  <div className="mt-2 space-y-2 glass-panel-static p-3">
                     <input
                       value={newPartName}
                       onChange={(e) => setNewPartName(e.target.value)}
@@ -587,7 +591,7 @@ export default function BookingsPage() {
                       </button>
                       <button
                         onClick={() => { setAddingPart(false); setNewPartName(''); setNewPartNumber(''); }}
-                        className="px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100 rounded-lg"
+                        className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
                       >
                         Cancel
                       </button>
@@ -603,7 +607,7 @@ export default function BookingsPage() {
                     <button
                       key={t.next}
                       onClick={() => updateStatus(selected.id, t.next)}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-lg shadow-sm transition-colors ${t.color}`}
+                      className={`px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${t.color}`}
                     >
                       {t.label}
                     </button>
@@ -617,18 +621,17 @@ export default function BookingsPage() {
 
       {/* Walk-in Modal */}
       {showWalkin && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="premium-card-static shadow-[var(--shadow-elevated)] w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <h3 className="text-lg font-semibold font-display">New Walk-in Booking</h3>
-              <button onClick={() => setShowWalkin(false)} className="text-slate-400 hover:text-slate-600">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-panel-static w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up" style={{ boxShadow: 'var(--shadow-elevated)' }}>
+            <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <h3 className="text-lg font-semibold font-display text-white">New Walk-in Booking</h3>
+              <button onClick={() => setShowWalkin(false)} className="text-gray-500 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-4 space-y-4">
-              {/* Service */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Service *</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Service *</label>
                 <select
                   value={walkinServiceId}
                   onChange={(e) => setWalkinServiceId(e.target.value)}
@@ -641,10 +644,9 @@ export default function BookingsPage() {
                 </select>
               </div>
 
-              {/* Date/Time */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Date</label>
                   <input
                     type="date"
                     value={walkinDate?.toISOString().split('T')[0] || ''}
@@ -658,7 +660,7 @@ export default function BookingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Time</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Time</label>
                   <input
                     type="time"
                     value={walkinDate ? `${String(walkinDate.getHours()).padStart(2, '0')}:${String(walkinDate.getMinutes()).padStart(2, '0')}` : ''}
@@ -673,9 +675,8 @@ export default function BookingsPage() {
                 </div>
               </div>
 
-              {/* Customer */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Customer</label>
                 <select
                   value={walkinExistingCustomer}
                   onChange={(e) => setWalkinExistingCustomer(e.target.value)}
@@ -714,9 +715,8 @@ export default function BookingsPage() {
                 )}
               </div>
 
-              {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Notes</label>
                 <textarea
                   value={walkinNotes}
                   onChange={(e) => setWalkinNotes(e.target.value)}
@@ -729,7 +729,7 @@ export default function BookingsPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => setShowWalkin(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="btn-ghost px-4 py-2 text-sm"
                 >
                   Cancel
                 </button>

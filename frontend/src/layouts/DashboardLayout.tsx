@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useSearchParams } from 'react-router-dom';
 import { MerchantProvider, useMerchant } from '../context/MerchantContext';
-import { Calendar, Wrench, Users, Settings, Menu, X, CheckCircle, LogOut } from 'lucide-react';
+import { Calendar, Wrench, Users, Settings, Menu, X, CheckCircle, LogOut, Zap } from 'lucide-react';
 
 const NAV_ITEMS = [
   { to: '', icon: Calendar, label: 'Bookings', end: true },
@@ -18,10 +18,10 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-warm-50">
-        <div className="premium-card-static p-8 flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <div className="text-slate-500 text-sm font-display">Loading dashboard...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg-base)' }}>
+        <div className="glass-panel-static p-8 flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+          <div className="text-sm font-display" style={{ color: 'var(--color-text-secondary)' }}>Loading dashboard...</div>
         </div>
       </div>
     );
@@ -29,10 +29,10 @@ function DashboardContent() {
 
   if (error || !merchant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-warm-50">
-        <div className="premium-card-static p-8 text-center max-w-sm">
-          <p className="text-red-600 font-display font-semibold mb-4">{error || 'Merchant not found'}</p>
-          <a href="/" className="text-primary hover:underline text-sm">Back to home</a>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg-base)' }}>
+        <div className="glass-panel-static p-8 text-center max-w-sm">
+          <p className="font-display font-semibold mb-4" style={{ color: 'var(--color-danger)' }}>{error || 'Merchant not found'}</p>
+          <a href="/" className="text-sm hover:underline" style={{ color: 'var(--color-accent)' }}>Back to home</a>
         </div>
       </div>
     );
@@ -41,47 +41,61 @@ function DashboardContent() {
   const initial = merchant.name.charAt(0).toUpperCase();
 
   return (
-    <div className="h-screen bg-warm-50 flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden" style={{ backgroundColor: 'var(--color-bg-base)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden animate-fade-in"
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-100 shadow-[1px_0_8px_rgba(0,0,0,0.04)]
-        transform transition-transform lg:translate-x-0 flex flex-col
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        {/* Brand + merchant */}
-        <div className="p-4 border-b border-slate-100">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <img src="/logo.svg" alt="Who's Next?" className="w-8 h-8" />
-              <h1 className="text-xl font-bold text-slate-900 font-display tracking-tight">
-                Who's <span className="text-primary">Next?</span>
-              </h1>
+      <aside
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50 w-64 border-r
+          transform transition-transform lg:translate-x-0 flex flex-col flex-shrink-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+        style={{
+          borderColor: 'var(--color-border-accent)',
+          backgroundColor: 'rgba(13, 11, 10, 0.8)',
+          backdropFilter: 'blur(4px)',
+        }}
+      >
+        {/* Brand */}
+        <div className="h-20 flex items-center px-6 border-b" style={{ borderColor: 'var(--color-border-accent)' }}>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 flex items-center justify-center font-bold text-xl relative"
+                style={{
+                  background: 'var(--color-accent-subtle)',
+                  border: '1px solid var(--color-border-accent)',
+                  color: 'var(--color-accent)',
+                }}
+              >
+                {initial}
+                <div className="absolute -top-1 -right-1 w-2 h-2 animate-pulse" style={{ backgroundColor: 'var(--color-accent)' }} />
+              </div>
+              <span className="font-bold text-xl tracking-wide text-white font-display">
+                Who's <span style={{ color: 'var(--color-accent)' }}>Next?</span>
+              </span>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-500">
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden" style={{ color: 'var(--color-text-secondary)' }}>
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center font-bold text-sm font-display">
-              {initial}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-900 truncate font-display tracking-tight">{merchant.name}</div>
-              <div className="text-xs text-slate-400">Dashboard</div>
-            </div>
-          </div>
+        </div>
+
+        {/* Merchant info */}
+        <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--color-border-accent)' }}>
+          <div className="text-sm font-semibold text-white truncate font-display tracking-tight">{merchant.name}</div>
+          <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>Dashboard</div>
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1 flex-1">
+        <nav className="p-4 space-y-1 flex-1 mt-4">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.label}
@@ -89,20 +103,25 @@ function DashboardContent() {
               end={item.end}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative ${
+                `flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors relative ${
                   isActive
-                    ? 'bg-primary/6 text-primary'
-                    : 'text-slate-600 hover:bg-warm-50 hover:text-slate-900'
+                    ? 'text-[var(--color-accent)]'
+                    : 'text-gray-400 hover:text-white'
                 }`
+              }
+              style={({ isActive }) =>
+                isActive
+                  ? { background: 'var(--color-accent-subtle)', borderLeft: '2px solid var(--color-accent)' }
+                  : {}
               }
             >
               {({ isActive }) => (
                 <>
                   {isActive && (
-                    <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-primary rounded-r" />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 animate-pulse" style={{ backgroundColor: 'var(--color-accent)' }} />
                   )}
                   <item.icon className="w-5 h-5" />
-                  {item.label}
+                  <span className="tracking-wide uppercase text-xs">{item.label}</span>
                 </>
               )}
             </NavLink>
@@ -110,42 +129,74 @@ function DashboardContent() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t" style={{ borderColor: 'var(--color-border-accent)' }}>
           <button
             onClick={logout}
-            className="flex items-center gap-2 text-sm text-slate-500 hover:text-red-600 transition-colors w-full px-3 py-2 rounded-lg hover:bg-red-50"
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-400 transition-colors w-full px-3 py-2"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
           </button>
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-300 mt-2">
-            <img src="/logo.svg" alt="" className="w-4 h-4 opacity-30" />
-            Powered by Who's Next?
+          {merchant.plan === 'FREE' && (
+            <div className="flex items-center gap-2 mt-3 px-3">
+              <Zap className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} />
+              <span className="text-[10px] font-mono-custom uppercase tracking-widest" style={{ color: 'rgba(255, 179, 71, 0.8)' }}>
+                Powered by Who's Next?
+              </span>
+            </div>
+          )}
+          <div className="text-[9px] font-mono-custom mt-2 px-3 uppercase" style={{ color: 'var(--color-text-muted)' }}>
+            v.2.0.0
           </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {/* Ambient background */}
+        <div className="absolute inset-0 pointer-events-none z-0 bg-grid ambient-arc-top" />
+
         {/* Top bar */}
-        <header className="bg-white border-b border-slate-100 px-4 py-3.5 flex items-center gap-4 shadow-sm">
+        <header
+          className="relative z-10 px-4 py-3.5 flex items-center gap-4 border-b"
+          style={{
+            borderColor: 'var(--color-border-accent)',
+            backgroundColor: 'rgba(13, 11, 10, 0.6)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-slate-500 hover:text-slate-700"
+            className="lg:hidden text-gray-400 hover:text-white"
           >
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex-1" />
-          <div className="flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full shadow-sm">
+          <div
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1"
+            style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+              color: 'var(--color-success)',
+              borderRadius: '999px',
+            }}
+          >
             <CheckCircle className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">Connected</span>
+            Connected
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-6 py-8 flex flex-col min-h-0 overflow-y-auto">
+        <main className="flex-1 px-6 py-8 flex flex-col min-h-0 overflow-y-auto relative z-10">
           <Outlet />
         </main>
+
+        {/* Ambient tech label */}
+        <div className="absolute bottom-3 left-6 z-10 pointer-events-none">
+          <span className="text-[9px] font-mono-custom uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+            SYS.CORE // ON-LINE
+          </span>
+        </div>
       </div>
     </div>
   );

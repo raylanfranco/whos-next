@@ -65,10 +65,8 @@ export default function ServicesPage() {
   const [form, setForm] = useState<ServiceFormData>(EMPTY_FORM);
   const [priceInput, setPriceInput] = useState('');
 
-  // Detail view
   const [detailService, setDetailService] = useState<Service | null>(null);
 
-  // Intake question management (used in detail view)
   const [questions, setQuestions] = useState<IntakeQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [showQuestionForm, setShowQuestionForm] = useState(false);
@@ -91,8 +89,6 @@ export default function ServicesPage() {
     setQuestions(data);
     setQuestionsLoading(false);
   }, []);
-
-  // ── Service CRUD ──
 
   function openCreate() {
     setEditingId(null);
@@ -126,7 +122,6 @@ export default function ServicesPage() {
     }
     setShowModal(false);
     await fetchServices();
-    // If we're in detail view editing the current service, update it
     if (detailService && editingId === detailService.id) {
       setDetailService({ ...detailService, ...payload });
     }
@@ -147,8 +142,6 @@ export default function ServicesPage() {
     }
   }
 
-  // ── Detail view ──
-
   function openDetail(s: Service) {
     setDetailService(s);
     fetchQuestions(s.id);
@@ -162,8 +155,6 @@ export default function ServicesPage() {
     setShowQuestionForm(false);
     setEditingQuestionId(null);
   }
-
-  // ── Intake question CRUD ──
 
   function openAddQuestion() {
     setEditingQuestionId(null);
@@ -230,63 +221,60 @@ export default function ServicesPage() {
   }
 
   if (loading) return (
-    <div className="premium-card-static p-6 text-center">
-      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-      <div className="text-slate-500 text-sm font-display">Loading services...</div>
+    <div className="glass-panel-static p-6 text-center">
+      <div className="w-5 h-5 border-2 border-t-transparent animate-spin mx-auto mb-2" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
+      <div className="text-sm font-display" style={{ color: 'var(--color-text-secondary)' }}>Loading services...</div>
     </div>
   );
 
-  // ══════════════════════════════════════════════════════
   // ── DETAIL VIEW ──
-  // ══════════════════════════════════════════════════════
 
   if (detailService) {
     return (
       <div>
-        {/* Header */}
         <button
           onClick={closeDetail}
-          className="flex items-center gap-1 text-sm text-primary hover:text-primary-dark mb-4 cursor-pointer"
+          className="flex items-center gap-1 text-sm mb-4 cursor-pointer transition-colors"
+          style={{ color: 'var(--color-accent)' }}
         >
           <ChevronLeft className="w-4 h-4" />
           Back to Services
         </button>
 
         {/* Service Info Card */}
-        <div className="premium-card-static overflow-hidden mb-6">
+        <div className="glass-panel-static overflow-hidden mb-6">
           <div className="flex flex-col sm:flex-row">
-            {/* Image */}
             {getDefaultImage(detailService) ? (
-              <div className="sm:w-48 h-36 sm:h-auto shrink-0 bg-slate-100">
+              <div className="sm:w-48 h-36 sm:h-auto shrink-0" style={{ background: 'var(--color-bg-surface)' }}>
                 <img src={getDefaultImage(detailService)!} alt={detailService.name} className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="sm:w-48 h-36 sm:h-auto shrink-0 bg-gradient-to-br from-primary/10 to-slate-50 flex items-center justify-center">
-                <span className="text-4xl font-bold text-primary/15">{detailService.name.charAt(0)}</span>
+              <div className="sm:w-48 h-36 sm:h-auto shrink-0 flex items-center justify-center" style={{ background: 'var(--color-accent-subtle)' }}>
+                <span className="text-4xl font-bold" style={{ color: 'rgba(255, 179, 71, 0.15)' }}>{detailService.name.charAt(0)}</span>
               </div>
             )}
 
-            {/* Info */}
             <div className="flex-1 p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-xl font-bold text-slate-900 font-display tracking-tight">{detailService.name}</h1>
+                  <h1 className="text-xl font-bold text-white font-display tracking-tight">{detailService.name}</h1>
                   {detailService.category && (
-                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded shadow-sm mt-1 inline-block">{detailService.category}</span>
+                    <span className="text-xs px-2 py-0.5 mt-1 inline-block" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border-accent)' }}>{detailService.category}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => toggleActive(detailService)}
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full cursor-pointer ${
-                      detailService.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                    className={`text-xs font-medium px-2.5 py-1 cursor-pointer ${
+                      detailService.isActive ? 'status-completed' : 'status-no-show'
                     }`}
                   >
                     {detailService.isActive ? 'Active' : 'Inactive'}
                   </button>
                   <button
                     onClick={() => openEdit(detailService)}
-                    className="flex items-center gap-1 text-sm text-primary hover:text-primary-dark cursor-pointer"
+                    className="flex items-center gap-1 text-sm cursor-pointer"
+                    style={{ color: 'var(--color-accent)' }}
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Edit
@@ -295,16 +283,16 @@ export default function ServicesPage() {
               </div>
 
               {detailService.description && (
-                <p className="text-sm text-slate-600 mt-2">{detailService.description}</p>
+                <p className="text-sm mt-2" style={{ color: 'var(--color-text-secondary)' }}>{detailService.description}</p>
               )}
 
               <div className="flex items-center gap-6 mt-4">
-                <div className="flex items-center gap-1.5 text-sm text-slate-600 font-display">
-                  <Clock className="w-4 h-4 text-slate-400" />
+                <div className="flex items-center gap-1.5 text-sm font-display" style={{ color: 'var(--color-text-secondary)' }}>
+                  <Clock className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
                   {detailService.durationMins} min
                 </div>
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 font-display">
-                  <DollarSign className="w-4 h-4 text-slate-400" />
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-white font-display">
+                  <DollarSign className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
                   {formatPrice(detailService.priceCents)}
                 </div>
               </div>
@@ -313,11 +301,11 @@ export default function ServicesPage() {
         </div>
 
         {/* Intake Questions Section */}
-        <div className="premium-card-static overflow-hidden">
-          <div className="flex items-center justify-between p-4 bg-warm-50 border-b border-slate-100">
+        <div className="glass-panel-static overflow-hidden">
+          <div className="flex items-center justify-between p-4" style={{ background: 'var(--color-bg-surface)', borderBottom: '1px solid var(--color-border)' }}>
             <div>
-              <h2 className="text-base font-semibold text-slate-900 font-display">Intake Questions</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="text-base font-semibold text-white font-display">Intake Questions</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
                 Customize what customers see during booking for this service.
               </p>
             </div>
@@ -332,17 +320,18 @@ export default function ServicesPage() {
 
           <div className="p-4">
             {questionsLoading ? (
-              <div className="text-sm text-slate-500 text-center py-6">Loading questions...</div>
+              <div className="text-sm text-center py-6" style={{ color: 'var(--color-text-secondary)' }}>Loading questions...</div>
             ) : questions.length === 0 && !showQuestionForm ? (
               <div className="text-center py-8">
-                <div className="text-slate-400 text-sm mb-2 font-display">No intake questions configured yet.</div>
-                <p className="text-xs text-slate-400 mb-4">
+                <div className="text-sm mb-2 font-display" style={{ color: 'var(--color-text-muted)' }}>No intake questions configured yet.</div>
+                <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
                   Add questions to customize what customers fill out when booking this service.
                   Without questions, the default vehicle intake form will be shown.
                 </p>
                 <button
                   onClick={openAddQuestion}
-                  className="text-sm text-primary hover:text-primary-dark font-medium cursor-pointer"
+                  className="text-sm font-medium cursor-pointer"
+                  style={{ color: 'var(--color-accent)' }}
                 >
                   + Add your first question
                 </button>
@@ -350,50 +339,47 @@ export default function ServicesPage() {
             ) : (
               <div className="space-y-2">
                 {questions.map((q, i) => (
-                  <div key={q.id} className="flex items-start gap-3 premium-card-static p-3">
-                    {/* Reorder */}
+                  <div key={q.id} className="flex items-start gap-3 glass-panel-static p-3">
                     <div className="flex flex-col gap-0.5 pt-0.5">
                       <button
                         onClick={() => moveQuestion(i, 'up')}
                         disabled={i === 0}
-                        className="text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                        className="text-gray-500 hover:text-white disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronUp className="w-3.5 h-3.5" />
                       </button>
-                      <GripVertical className="w-3.5 h-3.5 text-slate-300" />
+                      <GripVertical className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
                       <button
                         onClick={() => moveQuestion(i, 'down')}
                         disabled={i === questions.length - 1}
-                        className="text-slate-400 hover:text-slate-600 disabled:opacity-30 cursor-pointer"
+                        className="text-gray-500 hover:text-white disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronDown className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-slate-900">
+                      <div className="text-sm font-medium text-white">
                         {q.question}
-                        {q.required && <span className="text-red-500 ml-1">*</span>}
+                        {q.required && <span className="ml-1" style={{ color: 'var(--color-danger)' }}>*</span>}
                       </div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded shadow-sm">
+                        <span className="text-xs px-1.5 py-0.5" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border-accent)' }}>
                           {QUESTION_TYPES.find((t) => t.value === q.type)?.label || q.type}
                         </span>
                         {q.options && q.options.length > 0 && (
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                             {q.options.join(' · ')}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => openEditQuestion(q)} className="text-slate-400 hover:text-primary p-1 cursor-pointer">
+                      <button onClick={() => openEditQuestion(q)} className="p-1 cursor-pointer text-gray-500 hover:text-[var(--color-accent)]">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => handleDeleteQuestion(q.id)} className="text-slate-400 hover:text-red-500 p-1 cursor-pointer">
+                      <button onClick={() => handleDeleteQuestion(q.id)} className="p-1 cursor-pointer text-gray-500 hover:text-red-400">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -404,12 +390,12 @@ export default function ServicesPage() {
 
             {/* Add/Edit Question Form */}
             {showQuestionForm && (
-              <form onSubmit={handleQuestionSubmit} className="mt-4 bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
-                <div className="text-sm font-semibold text-slate-900">
+              <form onSubmit={handleQuestionSubmit} className="mt-4 p-4 space-y-3" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
+                <div className="text-sm font-semibold text-white">
                   {editingQuestionId ? 'Edit Question' : 'New Question'}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Question</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Question</label>
                   <input
                     value={qForm.question}
                     onChange={(e) => setQForm({ ...qForm, question: e.target.value })}
@@ -420,11 +406,11 @@ export default function ServicesPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">Type</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Type</label>
                     <select
                       value={qForm.type}
                       onChange={(e) => setQForm({ ...qForm, type: e.target.value as QuestionType })}
-                      className="premium-input w-full bg-white"
+                      className="premium-input w-full"
                     >
                       {QUESTION_TYPES.map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -432,12 +418,11 @@ export default function ServicesPage() {
                     </select>
                   </div>
                   <div className="flex items-end">
-                    <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--color-text-secondary)' }}>
                       <input
                         type="checkbox"
                         checked={qForm.required}
                         onChange={(e) => setQForm({ ...qForm, required: e.target.checked })}
-                        className="rounded border-slate-300"
                       />
                       Required
                     </label>
@@ -445,9 +430,9 @@ export default function ServicesPage() {
                 </div>
                 {qForm.type !== 'TEXT' && (
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                       {qForm.type === 'TINT_ZONE' ? 'Shade Options' : 'Options'}{' '}
-                      <span className="text-slate-400 font-normal">(comma-separated)</span>
+                      <span style={{ color: 'var(--color-text-muted)' }}>(comma-separated)</span>
                     </label>
                     <input
                       value={qForm.options}
@@ -462,7 +447,7 @@ export default function ServicesPage() {
                     {qForm.options && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {qForm.options.split(',').map((o) => o.trim()).filter(Boolean).map((o, i) => (
-                          <span key={i} className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{o}</span>
+                          <span key={i} className="text-xs px-2 py-0.5" style={{ background: 'var(--color-accent-subtle)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border-accent)' }}>{o}</span>
                         ))}
                       </div>
                     )}
@@ -472,7 +457,7 @@ export default function ServicesPage() {
                   <button
                     type="button"
                     onClick={() => { setShowQuestionForm(false); setEditingQuestionId(null); }}
-                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                    className="btn-ghost px-3 py-1.5 text-xs cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -488,20 +473,17 @@ export default function ServicesPage() {
           </div>
         </div>
 
-        {/* Service Edit Modal (shared) */}
         {showModal && renderModal()}
       </div>
     );
   }
 
-  // ══════════════════════════════════════════════════════
   // ── LIST VIEW ──
-  // ══════════════════════════════════════════════════════
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 font-display tracking-tight">Services</h1>
+        <h1 className="text-2xl font-bold text-white font-display tracking-tight">Services</h1>
         <button
           onClick={openCreate}
           className="flex items-center gap-2 btn-primary px-4 py-2 text-sm cursor-pointer"
@@ -512,31 +494,31 @@ export default function ServicesPage() {
       </div>
 
       {services.length === 0 ? (
-        <div className="premium-card-static p-12 text-center">
-          <div className="text-slate-500 font-display">No services yet. Add your first service to get started.</div>
+        <div className="glass-panel-static p-12 text-center">
+          <div className="font-display" style={{ color: 'var(--color-text-secondary)' }}>No services yet. Add your first service to get started.</div>
         </div>
       ) : (
-        <div className="premium-card-static overflow-hidden">
+        <div className="glass-panel-static overflow-hidden">
           <table className="w-full">
-            <thead className="bg-warm-50 border-b border-slate-100">
+            <thead style={{ background: 'var(--color-bg-surface)', borderBottom: '1px solid var(--color-border)' }}>
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600 w-12"></th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Name</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Category</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Duration</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Price</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Status</th>
-                <th className="text-right px-4 py-3 text-sm font-medium text-slate-600">Actions</th>
+                <th className="text-left px-4 py-3 text-sm font-medium w-12" style={{ color: 'var(--color-text-secondary)' }}></th>
+                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Name</th>
+                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Category</th>
+                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Duration</th>
+                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Price</th>
+                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Status</th>
+                <th className="text-right px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {services.map((s) => (
-                <tr key={s.id} className="hover:bg-warm-50">
+                <tr key={s.id} className="service-row" style={{ borderBottom: '1px solid var(--color-border)' }}>
                   <td className="px-4 py-3">
                     {getDefaultImage(s) ? (
-                      <img src={getDefaultImage(s)!} alt={s.name} className="w-10 h-10 object-cover rounded" />
+                      <img src={getDefaultImage(s)!} alt={s.name} className="w-10 h-10 object-cover" />
                     ) : (
-                      <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs">—</div>
+                      <div className="w-10 h-10 flex items-center justify-center text-xs" style={{ background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)' }}>—</div>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -544,30 +526,28 @@ export default function ServicesPage() {
                       onClick={() => openDetail(s)}
                       className="text-left cursor-pointer group"
                     >
-                      <div className="font-medium text-slate-900 group-hover:text-primary transition-colors">{s.name}</div>
-                      {s.description && <div className="text-sm text-slate-500 line-clamp-1">{s.description}</div>}
+                      <div className="font-medium text-white group-hover:text-[var(--color-accent)] transition-colors">{s.name}</div>
+                      {s.description && <div className="text-sm line-clamp-1" style={{ color: 'var(--color-text-muted)' }}>{s.description}</div>}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{s.category || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{s.durationMins} min</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{formatPrice(s.priceCents)}</td>
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{s.category || '—'}</td>
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{s.durationMins} min</td>
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{formatPrice(s.priceCents)}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleActive(s)}
-                      className={`text-xs font-medium px-2 py-1 rounded-full cursor-pointer ${
-                        s.isActive
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-slate-100 text-slate-500'
+                      className={`text-xs font-medium px-2 py-1 cursor-pointer ${
+                        s.isActive ? 'status-completed' : 'status-no-show'
                       }`}
                     >
                       {s.isActive ? 'Active' : 'Inactive'}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <button onClick={() => openEdit(s)} className="text-slate-400 hover:text-primary p-1 cursor-pointer">
+                  <td className="px-4 py-3 text-right whitespace-nowrap action-btns">
+                    <button onClick={() => openEdit(s)} className="p-1 cursor-pointer text-gray-500 hover:text-[var(--color-accent)]">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(s.id)} className="text-slate-400 hover:text-red-500 p-1 ml-1 cursor-pointer">
+                    <button onClick={() => handleDelete(s.id)} className="p-1 ml-1 cursor-pointer text-gray-500 hover:text-red-400">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -578,28 +558,25 @@ export default function ServicesPage() {
         </div>
       )}
 
-      {/* Service Create/Edit Modal */}
       {showModal && renderModal()}
     </div>
   );
 
-  // ══════════════════════════════════════════════════════
   // ── SHARED MODAL ──
-  // ══════════════════════════════════════════════════════
 
   function renderModal() {
     return (
-      <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4 animate-fade-in">
-        <div className="premium-card-static shadow-[var(--shadow-elevated)] w-full max-w-md animate-slide-up">
-          <div className="flex items-center justify-between p-4 border-b border-slate-100">
-            <h3 className="text-lg font-semibold font-display">{editingId ? 'Edit Service' : 'New Service'}</h3>
-            <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="glass-panel-static w-full max-w-md animate-slide-up" style={{ boxShadow: 'var(--shadow-elevated)' }}>
+          <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <h3 className="text-lg font-semibold font-display text-white">{editingId ? 'Edit Service' : 'New Service'}</h3>
+            <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-white cursor-pointer">
               <X className="w-5 h-5" />
             </button>
           </div>
           <form onSubmit={handleSubmit} className="p-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Name</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -608,7 +585,7 @@ export default function ServicesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Category</label>
               <input
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -617,7 +594,7 @@ export default function ServicesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Description</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -626,7 +603,7 @@ export default function ServicesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Image URL</label>
               <input
                 value={form.imageUrl}
                 onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
@@ -637,14 +614,15 @@ export default function ServicesPage() {
                 <img
                   src={form.imageUrl}
                   alt="Preview"
-                  className="mt-2 w-full h-24 object-cover rounded-lg border border-slate-200"
+                  className="mt-2 w-full h-24 object-cover"
+                  style={{ border: '1px solid var(--color-border)' }}
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Duration (min)</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Duration (min)</label>
                 <input
                   type="number"
                   value={form.durationMins}
@@ -656,7 +634,7 @@ export default function ServicesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Price ($)</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Price ($)</label>
                 <input
                   type="number"
                   value={priceInput}
@@ -672,7 +650,7 @@ export default function ServicesPage() {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                className="btn-ghost px-4 py-2 text-sm cursor-pointer"
               >
                 Cancel
               </button>

@@ -3,9 +3,10 @@ import { PushController } from './push.controller';
 import { PushService } from './push.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { PlanModule } from '../plan/plan.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, PlanModule],
   controllers: [PushController],
   providers: [PushService],
   exports: [PushService],

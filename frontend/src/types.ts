@@ -10,7 +10,10 @@ export type BookingStatus =
 
 export type PartStatus = 'NEEDED' | 'ORDERED' | 'RECEIVED';
 
-export type QuestionType = 'RADIO' | 'CHECKBOX' | 'TEXT' | 'SELECT' | 'TINT_ZONE';
+export type QuestionType = 'RADIO' | 'CHECKBOX' | 'TEXT' | 'SELECT' | 'TINT_ZONE' | 'PHOTO_UPLOAD' | 'BODY_MAP';
+
+export type MerchantPlan = 'FREE' | 'PRO' | 'GRANDFATHERED';
+export type MerchantVertical = 'GENERIC' | 'AUTOMOTIVE' | 'TATTOO' | 'BEAUTY';
 
 export interface IntakeQuestion {
   id: string;
@@ -32,6 +35,9 @@ export interface Merchant {
   timezone: string;
   shopHours: Record<string, { open: string; close: string }> | null;
   settings: Record<string, unknown> | null;
+  plan: MerchantPlan;
+  planActivatedAt?: string | null;
+  vertical: MerchantVertical;
   createdAt: string;
   updatedAt: string;
   services?: Service[];

@@ -7,11 +7,14 @@ import VehicleSelector from '../components/VehicleSelector';
 import IntakeQuestionnaire, { EMPTY_INTAKE } from '../components/IntakeQuestionnaire';
 import DynamicIntakeForm from '../components/DynamicIntakeForm';
 import StripeCardForm from '../components/StripeCardForm';
+import DesignIntake from '../adapters/tattoo/DesignIntake';
+import ArtistSelector from '../adapters/tattoo/ArtistSelector';
+import { EMPTY_TATTOO_INTAKE, validateTattooIntake, type TattooIntakeData } from '../adapters/tattoo/TattooIntakeSchema';
 import type { StripeCardFormRef } from '../components/StripeCardForm';
 import type { IntakeData } from '../components/IntakeQuestionnaire';
 import type { Service, Merchant, IntakeQuestion } from '../types';
 
-type Step = 'service' | 'vehicle' | 'datetime' | 'info' | 'payment' | 'confirm';
+type Step = 'service' | 'vehicle' | 'tattoo' | 'datetime' | 'info' | 'payment' | 'confirm';
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -59,6 +62,8 @@ export default function BookingPage() {
   const [intakeData, setIntakeData] = useState<IntakeData>(EMPTY_INTAKE);
   const [dynamicQuestions, setDynamicQuestions] = useState<IntakeQuestion[]>([]);
   const [dynamicIntakeValues, setDynamicIntakeValues] = useState<Record<string, unknown>>({});
+  const [tattooIntake, setTattooIntake] = useState<TattooIntakeData>(EMPTY_TATTOO_INTAKE);
+  const [selectedArtist, setSelectedArtist] = useState('');
   const [notes, setNotes] = useState('');
 
   // Vehicle image
@@ -73,7 +78,7 @@ export default function BookingPage() {
   const [depositAmountCents, setDepositAmountCents] = useState(0);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
-  // Stripe Connect � fetch merchant's publishable key
+  // Stripe Connect � fetch merchant's publishable key
   const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,13 +94,16 @@ export default function BookingPage() {
   const depositCalc = selectedService ? Math.round(selectedService.priceCents * depositPercent / 100) : 0;
   const requiresDeposit = depositPercent > 0 && selectedService != null && depositCalc > 0;
 
-  // Vertical-specific: only show vehicle step for automotive merchants
-  const showVehicle = (merchant?.settings as Record<string, unknown> | null)?.vertical === 'automotive';
+  // Vertical-specific steps
+  const vertical = merchant?.vertical || 'GENERIC';
+  const showVehicle = vertical === 'AUTOMOTIVE';
+  const showTattoo = vertical === 'TATTOO';
 
-  // Build steps dynamically
+  // Build steps dynamically based on vertical
   const STEPS: { key: Step; label: string }[] = [
     { key: 'service', label: 'Service' },
     ...(showVehicle ? [{ key: 'vehicle' as Step, label: 'Vehicle' }] : []),
+    ...(showTattoo ? [{ key: 'tattoo' as Step, label: 'Design' }] : []),
     { key: 'datetime', label: 'Date & Time' },
     { key: 'info', label: 'Your Info' },
     ...(requiresDeposit ? [{ key: 'payment' as Step, label: 'Payment' }] : []),
@@ -222,10 +230,15 @@ export default function BookingPage() {
     if (!merchantId || !selectedService) return;
     setSubmitting(true);
 
-    // Build intake data — use dynamic answers if questions are configured, otherwise legacy format
+    // Build intake data based on vertical + dynamic questions
     let intake: Record<string, unknown> = {};
-    if (dynamicQuestions.length > 0) {
-      // Store as { questionText: answer } for readability in dashboard
+
+    if (showTattoo) {
+      // Tattoo vertical — store tattoo-specific intake
+      intake = { ...tattooIntake };
+      if (selectedArtist) intake.artistId = selectedArtist;
+    } else if (dynamicQuestions.length > 0) {
+      // Dynamic questions configured — store as { questionText: answer }
       for (const q of dynamicQuestions) {
         const val = dynamicIntakeValues[q.id];
         if (
@@ -237,6 +250,7 @@ export default function BookingPage() {
         }
       }
     } else {
+      // Legacy automotive intake fallback
       if (intakeData.currentSetup) intake.currentSetup = intakeData.currentSetup;
       if (intakeData.existingMods.length > 0) intake.existingMods = intakeData.existingMods;
       if (intakeData.knownIssues) intake.knownIssues = intakeData.knownIssues;
@@ -272,6 +286,7 @@ export default function BookingPage() {
   function canAdvance() {
     if (step === 'service') return !!selectedService;
     if (step === 'vehicle') return true; // Vehicle info is optional
+    if (step === 'tattoo') return validateTattooIntake(tattooIntake);
     if (step === 'datetime') return !!selectedDate && !!selectedTime;
     if (step === 'info') return !!customerInfo.name;
     if (step === 'payment') return !!chargeId;
@@ -607,7 +622,30 @@ export default function BookingPage() {
               </div>
             )}
 
-            {/* ── Step 3: Date & Time ── */}
+            {/* ── Tattoo Design Step ── */}
+            {showTattoo && step === 'tattoo' && (
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Design Details</h2>
+                <p className="text-sm text-slate-400 mb-8">Tell us about the tattoo you want.</p>
+
+                <div className="premium-card-static p-6 sm:p-8 space-y-6">
+                  <DesignIntake value={tattooIntake} onChange={setTattooIntake} />
+
+                  {/* Artist selector — from merchant settings */}
+                  {merchant?.settings && (merchant.settings as Record<string, unknown>).artists && (
+                    <div className="pt-6" style={{ borderTop: '1px solid var(--color-border)' }}>
+                      <ArtistSelector
+                        artists={(merchant.settings as Record<string, unknown>).artists as { id: string; name: string; specialties: string[]; photoUrl?: string }[]}
+                        value={selectedArtist}
+                        onChange={setSelectedArtist}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Date & Time Step ── */}
             {step === 'datetime' && (
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Pick a Date & Time</h2>

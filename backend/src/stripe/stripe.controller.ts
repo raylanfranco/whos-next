@@ -1,9 +1,10 @@
 import {
   Controller, Get, Post, Delete, Body, Query, Req, Res,
-  Headers, BadRequestException, Logger, UseGuards,
+  Headers, BadRequestException, Logger, UseGuards, SetMetadata,
 } from '@nestjs/common';
 import { StripeService } from './stripe.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { PlanGuard, REQUIRED_PLAN_KEY } from '../plan/plan.guard';
 import type { Request, Response } from 'express';
 
 @Controller('stripe')
@@ -18,7 +19,8 @@ export class StripeController {
    * Returns the Stripe Connect OAuth URL for the logged-in merchant.
    */
   @Get('connect')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PlanGuard)
+  @SetMetadata(REQUIRED_PLAN_KEY, 'PRO')
   getConnectUrl(@Req() req: Request) {
     const merchant = (req as any).merchant;
     const url = this.stripeService.getConnectUrl(merchant.id);

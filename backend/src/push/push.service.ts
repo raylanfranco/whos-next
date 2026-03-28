@@ -44,6 +44,39 @@ export class PushService {
     });
   }
 
+  /**
+   * Store a native device token (APNS/FCM) for push notifications.
+   * Uses the same PushSubscription table — endpoint is the device token,
+   * p256dh stores the platform, auth stores 'native' as a marker.
+   */
+  async subscribeNative(data: {
+    merchantId: string;
+    token: string;
+    platform: string;
+  }) {
+    const endpoint = `native://${data.platform}/${data.token}`;
+    return this.prisma.pushSubscription.upsert({
+      where: {
+        merchantId_endpoint: {
+          merchantId: data.merchantId,
+          endpoint,
+        },
+      },
+      update: {
+        p256dh: data.platform,
+        auth: 'native',
+        deviceLabel: `${data.platform} device`,
+      },
+      create: {
+        merchantId: data.merchantId,
+        endpoint,
+        p256dh: data.platform,
+        auth: 'native',
+        deviceLabel: `${data.platform} device`,
+      },
+    });
+  }
+
   async unsubscribe(merchantId: string, endpoint: string) {
     return this.prisma.pushSubscription.deleteMany({
       where: { merchantId, endpoint },
@@ -85,7 +118,7 @@ export class PushService {
 
   async testPush(merchantId: string) {
     return this.sendToMerchant(merchantId, {
-      title: 'Who's Next? Test',
+      title: "Who's Next? Test",
       body: 'Push notifications are working!',
       url: '/dashboard/bookings',
     });

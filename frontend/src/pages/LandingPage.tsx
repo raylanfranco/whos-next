@@ -74,11 +74,11 @@ const FAQS = [
   },
   {
     q: 'Can I collect deposits online?',
-    a: 'Yes. Set a deposit percentage (e.g. 25%) in your settings and Who's Next? will collect it during booking via Stripe\'s secure payment processing. The charge shows up in your Stripe dashboard.',
+    a: "Yes. Set a deposit percentage (e.g. 25%) in your settings and Who's Next? will collect it during booking via Stripe's secure payment processing. The charge shows up in your Stripe dashboard.",
   },
   {
     q: 'What kind of shops is this built for?',
-    a: 'Car audio, window tint, auto accessories, PPF, vinyl wrap — any install shop that needs structured vehicle data and appointment scheduling. If your workflow involves "what vehicle, what service, when," Who's Next? is for you.',
+    a: "Car audio, window tint, auto accessories, PPF, vinyl wrap — any install shop that needs structured vehicle data and appointment scheduling. If your workflow involves \"what vehicle, what service, when,\" Who's Next? is for you.",
   },
   {
     q: 'Is there a contract or setup fee?',

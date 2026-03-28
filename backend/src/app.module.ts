@@ -16,6 +16,8 @@ import { BookingPartModule } from './booking-part/booking-part.module';
 import { IntakeQuestionModule } from './intake-question/intake-question.module';
 import { NotificationModule } from './notification/notification.module';
 import { PushModule } from './push/push.module';
+import { PlanModule } from './plan/plan.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { PushModule } from './push/push.module';
     IntakeQuestionModule,
     NotificationModule,
     PushModule,
+    PlanModule,
+    BillingModule,
   ],
   controllers: [AppController],
 })

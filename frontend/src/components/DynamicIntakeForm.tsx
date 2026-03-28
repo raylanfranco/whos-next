@@ -1,5 +1,7 @@
+import { Camera } from 'lucide-react';
 import type { IntakeQuestion } from '../types';
 import TintZonePicker from './TintZonePicker';
+import BodyMapPicker from '../adapters/tattoo/BodyMapPicker';
 
 interface DynamicIntakeFormProps {
   questions: IntakeQuestion[];
@@ -116,6 +118,60 @@ export default function DynamicIntakeForm({ questions, values, onChange }: Dynam
               onChange={(val) => setValue(q.id, val)}
               shadeOptions={q.options && q.options.length > 0 ? q.options : ['5%', '20%', '35%', '50%', '70%']}
             />
+          )}
+
+          {/* BODY_MAP */}
+          {q.type === 'BODY_MAP' && (
+            <BodyMapPicker
+              value={(values[q.id] as string) || ''}
+              onChange={(val) => setValue(q.id, val)}
+            />
+          )}
+
+          {/* PHOTO_UPLOAD */}
+          {q.type === 'PHOTO_UPLOAD' && (
+            <div>
+              <div
+                className="p-5 text-center cursor-pointer transition-all"
+                style={{ background: 'var(--color-accent-subtle)', border: '2px dashed var(--color-border-accent)' }}
+                onClick={() => document.getElementById(`photo-${q.id}`)?.click()}
+              >
+                <Camera className="w-6 h-6 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+                <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  {((values[q.id] as string[]) || []).length > 0
+                    ? `${((values[q.id] as string[]) || []).length} file(s) selected`
+                    : 'Tap to upload'}
+                </div>
+              </div>
+              <input
+                id={`photo-${q.id}`}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (!files) return;
+                  const names = Array.from(files).slice(0, 5).map((f) => f.name);
+                  const current = (values[q.id] as string[]) || [];
+                  setValue(q.id, [...current, ...names].slice(0, 5));
+                }}
+              />
+              {((values[q.id] as string[]) || []).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {((values[q.id] as string[]) || []).map((name: string, i: number) => (
+                    <span key={i} className="text-xs px-2 py-1" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)', color: 'var(--color-text-secondary)' }}>
+                      {name}
+                      <button
+                        type="button"
+                        onClick={() => setValue(q.id, ((values[q.id] as string[]) || []).filter((_: string, j: number) => j !== i))}
+                        className="ml-1 hover:text-red-400"
+                      >×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       ))}
