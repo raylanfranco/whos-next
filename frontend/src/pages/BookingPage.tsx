@@ -632,7 +632,7 @@ export default function BookingPage() {
                   <DesignIntake value={tattooIntake} onChange={setTattooIntake} />
 
                   {/* Artist selector — from merchant settings */}
-                  {merchant?.settings && (merchant.settings as Record<string, unknown>).artists && (
+                  {merchant?.settings && !!(merchant.settings as Record<string, unknown>).artists && (
                     <div className="pt-6" style={{ borderTop: '1px solid var(--color-border)' }}>
                       <ArtistSelector
                         artists={(merchant.settings as Record<string, unknown>).artists as { id: string; name: string; specialties: string[]; photoUrl?: string }[]}
