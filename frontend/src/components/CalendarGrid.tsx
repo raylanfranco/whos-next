@@ -1,0 +1,130 @@
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import BookingBlock from './BookingBlock';
+import type { Booking } from '../types';
+
+interface CalendarGridProps {
+  bookings: Booking[];
+  startDate: Date;
+  view: 'week' | 'day';
+  startHour?: number;
+  endHour?: number;
+  onSlotClick: (date: Date) => void;
+  onBookingClick: (booking: Booking) => void;
+}
+
+const MIN_HOUR_HEIGHT = 48;
+
+function getWeekDates(start: Date): Date[] {
+  const dates: Date[] = [];
+  const d = new Date(start);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  for (let i = 0; i < 7; i++) {
+    dates.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function isToday(d: Date): boolean {
+  return isSameDay(d, new Date());
+}
+
+function formatHour(h: number): string {
+  if (h === 0) return '12 AM';
+  if (h < 12) return `${h} AM`;
+  if (h === 12) return '12 PM';
+  return `${h - 12} PM`;
+}
+
+function formatDayHeader(d: Date): { weekday: string; day: string } {
+  return {
+    weekday: d.toLocaleDateString('en-US', { weekday: 'short' }),
+    day: d.toLocaleDateString('en-US', { day: 'numeric' }),
+  };
+}
+
+export default function CalendarGrid({ bookings, startDate, view, startHour = 8, endHour = 19, onSlotClick, onBookingClick }: CalendarGridProps) {
+  const hours = useMemo(() => { const h: number[] = []; for (let i = startHour; i < endHour; i++) h.push(i); return h; }, [startHour, endHour]);
+  const columns = useMemo(() => { if (view === 'day') return [new Date(startDate)]; return getWeekDates(startDate); }, [startDate, view]);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [hourHeight, setHourHeight] = useState(64);
+
+  useEffect(() => { const el = gridRef.current; if (!el) return; const update = () => { const h = el.clientHeight; if (h > 0) setHourHeight(Math.max(MIN_HOUR_HEIGHT, h / hours.length)); }; update(); const ro = new ResizeObserver(update); ro.observe(el); return () => ro.disconnect(); }, [hours.length]);
+
+  const totalHeight = hours.length * hourHeight;
+
+  const columnBookings = useMemo(() => {
+    const map = new Map<number, Booking[]>();
+    columns.forEach((_, i) => map.set(i, []));
+    bookings.forEach((b) => {
+      // Extract YYYY-MM-DD from UTC timestamp
+      const bDateStr = b.startsAt.slice(0, 10);
+      const colIndex = columns.findIndex((c) => {
+        const y = c.getFullYear();
+        const m = String(c.getMonth() + 1).padStart(2, '0');
+        const d = String(c.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}` === bDateStr;
+      });
+      if (colIndex !== -1) map.get(colIndex)!.push(b);
+    });
+    return map;
+  }, [bookings, columns]);
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const showNowLine = nowMinutes >= startHour * 60 && nowMinutes < endHour * 60;
+  const nowTop = ((nowMinutes - startHour * 60) / 60) * hourHeight;
+
+  const getBookingPosition = useCallback((b: Booking): { topPx: number; heightPx: number } => {
+    const start = new Date(b.startsAt);
+    const end = new Date(b.endsAt);
+    const startMins = start.getUTCHours() * 60 + start.getUTCMinutes();
+    const endMins = end.getUTCHours() * 60 + end.getUTCMinutes();
+    const topPx = ((startMins - startHour * 60) / 60) * hourHeight;
+    const heightPx = ((endMins - startMins) / 60) * hourHeight;
+    return { topPx, heightPx };
+  }, [startHour, hourHeight]);
+
+  function handleColumnClick(colIndex: number, e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const minutesFromStart = (y / hourHeight) * 60;
+    const totalMinutes = startHour * 60 + minutesFromStart;
+    const snapped = Math.round(totalMinutes / 30) * 30;
+    const h = Math.floor(snapped / 60);
+    const m = snapped % 60;
+    const date = new Date(columns[colIndex]);
+    date.setHours(h, m, 0, 0);
+    onSlotClick(date);
+  }
+
+  return (
+    <div className="premium-card-static overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="flex border-b border-slate-200 shrink-0">
+        <div className="w-16 shrink-0" />
+        {columns.map((d, i) => { const { weekday, day } = formatDayHeader(d); const today = isToday(d); return (<div key={i} className={`flex-1 text-center py-2 border-l border-slate-100 ${today ? 'bg-warm-50' : ''}`}><div className={`text-xs font-medium ${today ? 'text-primary' : 'text-slate-500'}`}>{weekday}</div><div className={`text-lg font-semibold font-display ${today ? 'text-primary' : 'text-slate-900'}`}>{day}</div></div>); })}
+      </div>
+      <div ref={gridRef} className="flex-1 min-h-0 overflow-y-auto relative">
+        <div className="flex relative" style={{ height: `${totalHeight}px` }}>
+          <div className="w-16 shrink-0 relative">
+            {hours.map((h) => (<div key={h} className="absolute right-2 text-xs text-slate-400 -translate-y-1/2" style={{ top: `${(h - startHour) * hourHeight}px` }}>{formatHour(h)}</div>))}
+          </div>
+          {columns.map((colDate, colIdx) => (
+            <div key={colIdx} className="flex-1 border-l border-slate-100 relative cursor-pointer" onClick={(e) => handleColumnClick(colIdx, e)}>
+              {hours.map((h) => (<div key={h} className="absolute left-0 right-0 border-t border-slate-100" style={{ top: `${(h - startHour) * hourHeight}px` }} />))}
+              {hours.map((h) => (<div key={`half-${h}`} className="absolute left-0 right-0 border-t border-slate-50" style={{ top: `${(h - startHour) * hourHeight + hourHeight / 2}px` }} />))}
+              {(columnBookings.get(colIdx) || []).map((b) => { const { topPx, heightPx } = getBookingPosition(b); return (<BookingBlock key={b.id} booking={b} topPx={topPx} heightPx={heightPx} onClick={onBookingClick} />); })}
+              {showNowLine && isToday(colDate) && (<div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: `${nowTop}px` }}><div className="flex items-center"><div className="w-2 h-2 rounded-full bg-red-500 -ml-1" /><div className="flex-1 h-0.5 bg-red-500" /></div></div>)}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

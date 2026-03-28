@@ -1,0 +1,29 @@
+{
+  "name": "@victory-rush/whos-next-core",
+  "version": "1.0.0",
+  "description": "Who's Next? \u2014 Multi-tenant booking platform for appointment-based businesses",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raylanfranco/whos-next.git"
+  },
+  "author": "Raylan Franco",
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run start:dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "lint": "npm run lint --workspace=backend && npm run lint --workspace=frontend"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
