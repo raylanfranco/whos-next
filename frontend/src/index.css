@@ -74,6 +74,14 @@ body {
   color: var(--color-text-primary);
 }
 
+/* ── iOS safe area utility ── */
+.safe-area-pad {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 ::selection {
   background: #FFB347;
   color: #0D0B0A;
