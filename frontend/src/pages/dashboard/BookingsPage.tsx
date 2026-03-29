@@ -261,8 +261,8 @@ export default function BookingsPage() {
   const dateRange = calView === 'week' ? getWeekRange(currentDate) : getDayRange(currentDate);
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="mb-4">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="mb-4 shrink-0">
         <PushPrompt />
       </div>
 

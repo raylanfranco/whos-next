@@ -231,7 +231,7 @@ export default function ServicesPage() {
 
   if (detailService) {
     return (
-      <div>
+      <div className="overflow-y-auto flex-1 min-h-0">
         <button
           onClick={closeDetail}
           className="flex items-center gap-1 text-sm mb-4 cursor-pointer transition-colors"
@@ -481,7 +481,7 @@ export default function ServicesPage() {
   // ── LIST VIEW ──
 
   return (
-    <div>
+    <div className="overflow-y-auto flex-1 min-h-0">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white font-display tracking-tight">Services</h1>
         <button

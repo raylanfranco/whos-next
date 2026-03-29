@@ -44,7 +44,7 @@ export default function CustomersPage() {
 
   if (detail) {
     return (
-      <div>
+      <div className="overflow-y-auto flex-1 min-h-0">
         <button
           onClick={() => setDetail(null)}
           className="flex items-center gap-1 text-sm mb-4 transition-colors"
@@ -99,7 +99,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div>
+    <div className="overflow-y-auto flex-1 min-h-0">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white font-display tracking-tight">Customers</h1>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 btn-primary px-4 py-2 text-sm">
