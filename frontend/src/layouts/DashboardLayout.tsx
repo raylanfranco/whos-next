@@ -187,7 +187,7 @@ function DashboardContent() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-8 flex flex-col min-h-0 overflow-hidden relative z-10">
+        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-8 flex flex-col min-h-0 overflow-y-auto relative z-10">
           <Outlet />
         </main>
 
