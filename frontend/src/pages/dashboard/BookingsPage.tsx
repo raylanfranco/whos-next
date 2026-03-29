@@ -96,6 +96,11 @@ function getDayRange(date: Date): { from: string; to: string; label: string } {
 type ViewMode = 'calendar' | 'list';
 type CalendarView = 'week' | 'day';
 
+// Default to day view on mobile, week on desktop
+function getDefaultCalView(): CalendarView {
+  return window.innerWidth < 1024 ? 'day' : 'week';
+}
+
 export default function BookingsPage() {
   const { merchant } = useMerchant();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -103,7 +108,7 @@ export default function BookingsPage() {
   const [filter, setFilter] = useState<BookingStatus | ''>('');
   const [selected, setSelected] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
-  const [calView, setCalView] = useState<CalendarView>('week');
+  const [calView, setCalView] = useState<CalendarView>(getDefaultCalView);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Walk-in modal state
@@ -262,8 +267,8 @@ export default function BookingsPage() {
       </div>
 
       {/* Header with view toggle + nav */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3 shrink-0">
-        <h1 className="text-2xl font-bold text-white font-display tracking-tight">Bookings</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3 shrink-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-white font-display tracking-tight">Bookings</h1>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* View mode toggle */}
@@ -288,9 +293,9 @@ export default function BookingsPage() {
             </button>
           </div>
 
-          {/* Calendar sub-view */}
+          {/* Calendar sub-view — Week only on desktop */}
           {viewMode === 'calendar' && (
-            <div className="flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
+            <div className="hidden lg:flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
               <button
                 onClick={() => setCalView('day')}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors ${
