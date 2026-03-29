@@ -12,7 +12,6 @@ import MockDashboard from './pages/MockDashboard'
 
 export default function App() {
   return (
-    <div className="safe-area-pad">
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -26,6 +25,5 @@ export default function App() {
       </Route>
       <Route path="/book/:merchantId" element={<BookingPage />} />
     </Routes>
-    </div>
   )
 }
