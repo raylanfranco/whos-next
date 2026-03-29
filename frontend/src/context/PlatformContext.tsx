@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { StatusBar, Style } from '@capacitor/status-bar';
 
 interface PlatformState {
   isNative: boolean;
@@ -21,14 +20,6 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     isNative: Capacitor.isNativePlatform(),
     platform: Capacitor.getPlatform() as 'web' | 'ios' | 'android',
   }));
-
-  useEffect(() => {
-    if (!state.isNative) return;
-
-    // Configure status bar for dark theme
-    StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-    StatusBar.setBackgroundColor({ color: '#0D0B0A' }).catch(() => {});
-  }, [state.isNative]);
 
   return (
     <PlatformContext.Provider value={state}>
