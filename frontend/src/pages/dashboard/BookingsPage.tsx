@@ -261,110 +261,141 @@ export default function BookingsPage() {
   const dateRange = calView === 'week' ? getWeekRange(currentDate) : getDayRange(currentDate);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="mb-4 shrink-0">
-        <PushPrompt />
-      </div>
+    <div className="flex flex-col h-full overflow-hidden relative">
 
-      {/* Header with view toggle + nav */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3 shrink-0">
-        <h1 className="text-xl sm:text-2xl font-bold text-white font-display tracking-tight">Bookings</h1>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* View mode toggle */}
-          <div className="flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
+      {/* ═══ MOBILE HEADER (< lg) ═══ */}
+      <div className="lg:hidden shrink-0">
+        {/* Compact date nav */}
+        <div className="flex items-center justify-between py-2 shrink-0">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => setViewMode('calendar')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                viewMode === 'calendar' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
-              }`}
-              style={viewMode === 'calendar' ? { background: 'var(--color-accent-muted)' } : {}}
+              onClick={() => navigate(-1)}
+              className="p-1.5 text-gray-400 hover:text-white transition-colors"
             >
-              <Calendar className="w-4 h-4" /> Calendar
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
-                viewMode === 'list' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
-              }`}
-              style={viewMode === 'list' ? { background: 'var(--color-accent-muted)' } : {}}
+              onClick={() => navigate(0)}
+              className="px-2 py-1 text-xs font-medium btn-ghost"
             >
-              <List className="w-4 h-4" /> List
+              Today
+            </button>
+            <button
+              onClick={() => navigate(1)}
+              className="p-1.5 text-gray-400 hover:text-white transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-
-          {/* Calendar sub-view — Week only on desktop */}
-          {viewMode === 'calendar' && (
-            <div className="hidden lg:flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
-              <button
-                onClick={() => setCalView('day')}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                  calView === 'day' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
-                }`}
-                style={calView === 'day' ? { background: 'var(--color-accent-muted)' } : {}}
-              >
-                Day
-              </button>
-              <button
-                onClick={() => setCalView('week')}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                  calView === 'week' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
-                }`}
-                style={calView === 'week' ? { background: 'var(--color-accent-muted)' } : {}}
-              >
-                Week
-              </button>
-            </div>
-          )}
-
-          {/* Status filter */}
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as BookingStatus | '')}
-            className="premium-input py-1.5"
-          >
-            <option value="">All statuses</option>
-            {Object.keys(STATUS_COLORS).map((s) => (
-              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-            ))}
-          </select>
-
-          {/* New booking button */}
-          <button
-            onClick={() => handleSlotClick(new Date())}
-            className="flex items-center gap-1.5 btn-primary px-3 py-1.5 text-sm"
-          >
-            <Plus className="w-4 h-4" /> Walk-in
-          </button>
+          <span className="text-sm font-semibold text-white font-display">{dateRange.label}</span>
         </div>
       </div>
 
-      {/* Calendar navigation */}
-      {viewMode === 'calendar' && (
-        <div className="flex items-center gap-3 mb-4 shrink-0">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1.5 text-gray-400 hover:text-white transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => navigate(0)}
-            className="px-3 py-1 text-sm font-medium btn-ghost"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => navigate(1)}
-            className="p-1.5 text-gray-400 hover:text-white transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          <span className="text-sm font-medium font-display" style={{ color: 'var(--color-text-secondary)' }}>{dateRange.label}</span>
+      {/* ═══ DESKTOP HEADER (lg+) ═══ */}
+      <div className="hidden lg:block shrink-0">
+        <div className="mb-4">
+          <PushPrompt />
         </div>
-      )}
 
-      {/* Content + Revenue Sidebar */}
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <h1 className="text-2xl font-bold text-white font-display tracking-tight">Bookings</h1>
+
+          <div className="flex items-center gap-2">
+            {/* View mode toggle */}
+            <div className="flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewMode === 'calendar' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
+                }`}
+                style={viewMode === 'calendar' ? { background: 'var(--color-accent-muted)' } : {}}
+              >
+                <Calendar className="w-4 h-4" /> Calendar
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors ${
+                  viewMode === 'list' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
+                }`}
+                style={viewMode === 'list' ? { background: 'var(--color-accent-muted)' } : {}}
+              >
+                <List className="w-4 h-4" /> List
+              </button>
+            </div>
+
+            {/* Calendar sub-view */}
+            {viewMode === 'calendar' && (
+              <div className="flex p-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border-accent)' }}>
+                <button
+                  onClick={() => setCalView('day')}
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    calView === 'day' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
+                  }`}
+                  style={calView === 'day' ? { background: 'var(--color-accent-muted)' } : {}}
+                >
+                  Day
+                </button>
+                <button
+                  onClick={() => setCalView('week')}
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    calView === 'week' ? 'text-[var(--color-accent)]' : 'text-gray-400 hover:text-white'
+                  }`}
+                  style={calView === 'week' ? { background: 'var(--color-accent-muted)' } : {}}
+                >
+                  Week
+                </button>
+              </div>
+            )}
+
+            {/* Status filter */}
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as BookingStatus | '')}
+              className="premium-input py-1.5"
+            >
+              <option value="">All statuses</option>
+              {Object.keys(STATUS_COLORS).map((s) => (
+                <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+
+            {/* New booking button */}
+            <button
+              onClick={() => handleSlotClick(new Date())}
+              className="flex items-center gap-1.5 btn-primary px-3 py-1.5 text-sm"
+            >
+              <Plus className="w-4 h-4" /> Walk-in
+            </button>
+          </div>
+        </div>
+
+        {/* Calendar navigation — desktop */}
+        {viewMode === 'calendar' && (
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 text-gray-400 hover:text-white transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => navigate(0)}
+              className="px-3 py-1 text-sm font-medium btn-ghost"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => navigate(1)}
+              className="p-1.5 text-gray-400 hover:text-white transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-medium font-display" style={{ color: 'var(--color-text-secondary)' }}>{dateRange.label}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ CONTENT ═══ */}
       {loading ? (
         <div className="glass-panel-static p-6 text-center">
           <div className="w-5 h-5 border-2 border-t-transparent animate-spin mx-auto mb-2" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
@@ -390,7 +421,7 @@ export default function BookingsPage() {
           )}
         </div>
       ) : (
-        /* List view */
+        /* List view — desktop only */
         bookings.length === 0 ? (
           <div className="glass-panel-static p-12 text-center">
             <div className="font-display" style={{ color: 'var(--color-text-secondary)' }}>No bookings {filter ? `with status "${filter.replace(/_/g, ' ')}"` : 'yet'}.</div>
@@ -750,6 +781,15 @@ export default function BookingsPage() {
           </div>
         </div>
       )}
+
+      {/* ═══ MOBILE FAB — Walk-in ═══ */}
+      <button
+        onClick={() => handleSlotClick(new Date())}
+        className="lg:hidden fixed bottom-6 right-4 z-30 w-14 h-14 flex items-center justify-center btn-primary shadow-lg"
+        style={{ borderRadius: '50% !important', boxShadow: 'var(--shadow-glow-strong)' }}
+      >
+        <Plus className="w-6 h-6" />
+      </button>
     </div>
   );
 }

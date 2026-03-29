@@ -105,31 +105,32 @@ export default function CalendarGrid({ bookings, startDate, view, startHour = 8,
 
   return (
     <div className="glass-panel-static overflow-hidden flex flex-col flex-1 min-h-0">
-      <div className="flex shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <div className="w-16 shrink-0" />
+      {/* Day headers — hidden on mobile for single-day view (date shown in nav above) */}
+      <div className={`flex shrink-0 ${view === 'day' ? 'hidden lg:flex' : ''}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <div className="w-12 lg:w-16 shrink-0" />
         {columns.map((d, i) => {
           const { weekday, day } = formatDayHeader(d);
           const today = isToday(d);
           return (
             <div
               key={i}
-              className="flex-1 text-center py-2"
+              className="flex-1 text-center py-1.5 lg:py-2"
               style={{
                 borderLeft: '1px solid var(--color-border)',
                 background: today ? 'var(--color-accent-subtle)' : 'transparent',
               }}
             >
               <div className={`text-xs font-medium ${today ? 'text-[var(--color-accent)]' : ''}`} style={today ? {} : { color: 'var(--color-text-muted)' }}>{weekday}</div>
-              <div className={`text-lg font-semibold font-display ${today ? 'text-[var(--color-accent)]' : 'text-white'}`}>{day}</div>
+              <div className={`text-base lg:text-lg font-semibold font-display ${today ? 'text-[var(--color-accent)]' : 'text-white'}`}>{day}</div>
             </div>
           );
         })}
       </div>
       <div ref={gridRef} className="flex-1 min-h-0 overflow-y-auto relative">
         <div className="flex relative" style={{ height: `${totalHeight}px` }}>
-          <div className="w-16 shrink-0 relative">
+          <div className="w-12 lg:w-16 shrink-0 relative">
             {hours.map((h) => (
-              <div key={h} className="absolute right-2 text-xs -translate-y-1/2 font-mono-custom" style={{ top: `${(h - startHour) * hourHeight}px`, color: 'var(--color-text-muted)' }}>{formatHour(h)}</div>
+              <div key={h} className="absolute right-1 lg:right-2 text-[10px] lg:text-xs -translate-y-1/2 font-mono-custom" style={{ top: `${(h - startHour) * hourHeight}px`, color: 'var(--color-text-muted)' }}>{formatHour(h)}</div>
             ))}
           </div>
           {columns.map((colDate, colIdx) => (
