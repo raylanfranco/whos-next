@@ -9,10 +9,16 @@ async function bootstrap() {
 
   app.enableCors({
     origin: process.env.FRONTEND_URL
-      ? process.env.FRONTEND_URL.split(',').map((u) => u.trim())
+      ? [
+          ...process.env.FRONTEND_URL.split(',').map((u) => u.trim()),
+          'capacitor://localhost',
+          'ionic://localhost',
+        ]
       : [
           'http://localhost:5173',
           'http://localhost:5174',
+          'capacitor://localhost',
+          'ionic://localhost',
         ],
     credentials: true,
   });
