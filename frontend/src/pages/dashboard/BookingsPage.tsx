@@ -261,10 +261,10 @@ export default function BookingsPage() {
   const dateRange = calView === 'week' ? getWeekRange(currentDate) : getDayRange(currentDate);
 
   return (
-    <div className="flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden relative">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
 
       {/* ═══ MOBILE HEADER (< lg) ═══ */}
-      <div className="lg:hidden shrink-0 sticky top-0 z-20" style={{ backgroundColor: 'var(--color-bg-base)' }}>
+      <div className="lg:hidden shrink-0">
         {/* Compact date nav */}
         <div className="flex items-center justify-between py-2 shrink-0">
           <div className="flex items-center gap-1">

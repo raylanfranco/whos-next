@@ -104,7 +104,7 @@ export default function CalendarGrid({ bookings, startDate, view, startHour = 8,
   }
 
   return (
-    <div className="glass-panel-static overflow-hidden flex flex-col lg:flex-1 lg:min-h-0">
+    <div className="glass-panel-static overflow-hidden flex flex-col flex-1 min-h-0">
       {/* Day headers — hidden on mobile for single-day view (date shown in nav above) */}
       <div className={`flex shrink-0 ${view === 'day' ? 'hidden lg:flex' : ''}`} style={{ borderBottom: '1px solid var(--color-border)' }}>
         <div className="w-12 lg:w-16 shrink-0" />
@@ -126,7 +126,7 @@ export default function CalendarGrid({ bookings, startDate, view, startHour = 8,
           );
         })}
       </div>
-      <div ref={gridRef} className="lg:flex-1 lg:min-h-0 overflow-y-auto relative">
+      <div ref={gridRef} className="flex-1 min-h-0 overflow-y-auto relative">
         <div className="flex relative" style={{ height: `${totalHeight}px` }}>
           <div className="w-12 lg:w-16 shrink-0 relative">
             {hours.map((h) => (
