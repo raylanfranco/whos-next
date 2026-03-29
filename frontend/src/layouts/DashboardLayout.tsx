@@ -191,8 +191,8 @@ function DashboardContent() {
           <Outlet />
         </main>
 
-        {/* Ambient tech label */}
-        <div className="absolute bottom-3 left-6 z-10 pointer-events-none">
+        {/* Ambient tech label — desktop only */}
+        <div className="absolute bottom-3 left-6 z-10 pointer-events-none hidden lg:block">
           <span className="text-[9px] font-mono-custom uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
             SYS.CORE // ON-LINE
           </span>

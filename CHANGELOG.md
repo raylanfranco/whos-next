@@ -54,6 +54,25 @@ All notable changes to Who's Next? are documented here.
 - `.env.example` with all environment variables documented
 - `DEPLOY.md` — full deploy runbook + client migration SQL + App Store checklist
 
+**Mobile UX & iOS (Phase 6 continued — 2026-03-29)**
+- Google Calendar-inspired mobile BookingsPage: compact date nav, no chrome, FAB for walk-in
+- Flex-constrained calendar: fills viewport, scrolls hours internally (no page overflow)
+- Day view default on mobile (< 1024px), Week on desktop
+- Day/Week toggle hidden on mobile
+- Responsive main content padding (px-3 py-4 on mobile, px-6 py-8 on desktop)
+- SYS.CORE // ON-LINE label hidden on mobile
+- iOS safe area insets via body padding + viewport-fit=cover
+- Horizontal overflow fix: max-width 100vw + overflow-x hidden on html/body/#root
+- Capacitor 7 (downgraded from 8 — plugin incompatibility with Xcode 16.2/Swift 6)
+- Native push stubbed out until @capacitor/push-notifications updates for Capacitor core 8.3+
+- `capacitor://localhost` + `ionic://localhost` added to CORS allowed origins
+
+**Deploy & Infrastructure (2026-03-29)**
+- Railway backend deployed (whos-next-production.up.railway.app)
+- Vercel frontend deployed (whos-next-frontend.vercel.app)
+- All three Prisma migrations applied to production database
+- `.npmrc` updated with `legacy-peer-deps=true` for ESLint peer dependency resolution
+
 ### Changed
 - Vertical detection uses `merchant.vertical` field (not `settings.vertical`)
 - Status colors use CSS classes from design system (not inline Tailwind)
@@ -62,6 +81,9 @@ All notable changes to Who's Next? are documented here.
 ### Fixed
 - LandingPage: unescaped apostrophes in single-quoted strings
 - push.service.ts: smart quote in test notification title
+- email.service.ts: smart quote in from address string
+- CORS: added `capacitor://localhost` origin for Capacitor iOS WKWebView
+- Safari aggressive caching causing stale CSS on real iOS devices (lesson learned: always clear cache when testing mobile)
 
 ## [1.0.0] — 2026-03-26
 
