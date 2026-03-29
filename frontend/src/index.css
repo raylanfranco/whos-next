@@ -61,33 +61,26 @@
 /* ── Global reset ── */
 * { border-radius: 0 !important; }
 
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  margin: 0;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
-}
-
-/* ── iOS safe area ── */
-#root {
+  /* iOS safe area applied to body so all pages inherit it */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-#root > * {
-  flex: 1;
-  min-height: 0;
 }
 
 ::selection {
