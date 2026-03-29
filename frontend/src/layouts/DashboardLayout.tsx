@@ -41,7 +41,7 @@ function DashboardContent() {
   const initial = merchant.name.charAt(0).toUpperCase();
 
   return (
-    <div className="h-screen flex overflow-hidden" style={{ backgroundColor: 'var(--color-bg-base)' }}>
+    <div className="h-screen flex overflow-hidden" style={{ backgroundColor: 'var(--color-bg-base)', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
