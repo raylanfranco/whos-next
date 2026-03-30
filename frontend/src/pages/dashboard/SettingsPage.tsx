@@ -157,14 +157,17 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8 max-w-3xl overflow-y-auto flex-1 min-h-0">
-      <h1 className="text-2xl font-bold text-white font-display tracking-tight">Settings</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-white font-display tracking-tight">Settings</h1>
+        <div className="font-mono-custom text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>MERCHANT_CONFIG // SYSTEM</div>
+      </div>
 
       {/* Business Info */}
-      <section className="glass-panel-static p-6">
+      <section className="glass-panel-static p-6 tech-bracket">
         <h2 className="text-lg font-semibold text-white mb-4 font-display">Business Info</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Business Name</label>
+            <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>BUSINESS NAME</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -172,7 +175,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Timezone</label>
+            <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>TIMEZONE</label>
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}

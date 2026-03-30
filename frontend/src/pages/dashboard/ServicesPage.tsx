@@ -482,8 +482,13 @@ export default function ServicesPage() {
 
   return (
     <div className="overflow-y-auto flex-1 min-h-0">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white font-display tracking-tight">Services</h1>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white font-display tracking-tight">Services</h1>
+          <div className="font-mono-custom text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            TOTAL: {services.length} {services.filter(s => s.isActive).length > 0 && <span style={{ color: 'var(--color-accent-dim)' }}>// ACTIVE: {services.filter(s => s.isActive).length}</span>}
+          </div>
+        </div>
         <button
           onClick={openCreate}
           className="flex items-center gap-2 btn-primary px-4 py-2 text-sm cursor-pointer"
@@ -500,15 +505,15 @@ export default function ServicesPage() {
       ) : (
         <div className="glass-panel-static overflow-hidden">
           <table className="w-full">
-            <thead style={{ background: 'var(--color-bg-surface)', borderBottom: '1px solid var(--color-border)' }}>
-              <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium w-12" style={{ color: 'var(--color-text-secondary)' }}></th>
-                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Name</th>
-                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Category</th>
-                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Duration</th>
-                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Price</th>
-                <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Status</th>
-                <th className="text-right px-4 py-3 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>Actions</th>
+            <thead>
+              <tr style={{ background: 'rgba(5, 4, 4, 0.5)', borderBottom: '1px solid var(--color-border-accent)' }}>
+                <th className="w-12 px-4 py-3.5"></th>
+                <th className="text-left px-4 py-3.5 font-mono-custom uppercase" style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--color-text-muted)' }}>Name</th>
+                <th className="text-left px-4 py-3.5 font-mono-custom uppercase hidden md:table-cell" style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--color-text-muted)' }}>Category</th>
+                <th className="text-left px-4 py-3.5 font-mono-custom uppercase hidden sm:table-cell" style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--color-text-muted)' }}>Duration</th>
+                <th className="text-left px-4 py-3.5 font-mono-custom uppercase" style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--color-text-muted)' }}>Price</th>
+                <th className="text-left px-4 py-3.5 font-mono-custom uppercase hidden lg:table-cell" style={{ fontSize: '11px', letterSpacing: '0.15em', color: 'var(--color-text-muted)' }}>Status</th>
+                <th className="text-right px-4 py-3.5 w-20"></th>
               </tr>
             </thead>
             <tbody>
@@ -530,10 +535,14 @@ export default function ServicesPage() {
                       {s.description && <div className="text-sm line-clamp-1" style={{ color: 'var(--color-text-muted)' }}>{s.description}</div>}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{s.category || '—'}</td>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{s.durationMins} min</td>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{formatPrice(s.priceCents)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {s.category ? (
+                      <span className="text-xs px-2 py-0.5" style={{ background: 'var(--color-accent-subtle)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>{s.category}</span>
+                    ) : <span style={{ color: 'var(--color-text-muted)' }}>—</span>}
+                  </td>
+                  <td className="px-4 py-3 font-mono-custom text-[13px] hidden sm:table-cell" style={{ color: 'var(--color-text-secondary)' }}>{s.durationMins} min</td>
+                  <td className="px-4 py-3 font-mono-custom text-[13px] text-white">{formatPrice(s.priceCents)}</td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
                     <button
                       onClick={() => toggleActive(s)}
                       className={`text-xs font-medium px-2 py-1 cursor-pointer ${
@@ -566,17 +575,20 @@ export default function ServicesPage() {
 
   function renderModal() {
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
-        <div className="glass-panel-static w-full max-w-md animate-slide-up" style={{ boxShadow: 'var(--shadow-elevated)' }}>
-          <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
-            <h3 className="text-lg font-semibold font-display text-white">{editingId ? 'Edit Service' : 'New Service'}</h3>
+      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="w-full max-w-md animate-slide-up" style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border-accent-strong)', boxShadow: '0 0 40px rgba(255, 179, 71, 0.1)' }}>
+          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--color-border-accent)' }}>
+            <div>
+              <h3 className="text-lg font-semibold font-display text-white">{editingId ? 'Edit Service' : 'New Service'}</h3>
+              <div className="font-mono-custom mt-0.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.1em' }}>{editingId ? 'EDIT_RECORD' : 'NEW_RECORD'} // SERVICE_DB</div>
+            </div>
             <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-white cursor-pointer">
               <X className="w-5 h-5" />
             </button>
           </div>
-          <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Name</label>
+              <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>SERVICE NAME</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -585,7 +597,7 @@ export default function ServicesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Category</label>
+              <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>CATEGORY</label>
               <input
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -594,7 +606,7 @@ export default function ServicesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Description</label>
+              <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>DESCRIPTION</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -603,7 +615,7 @@ export default function ServicesPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Image URL</label>
+              <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>IMAGE URL</label>
               <input
                 value={form.imageUrl}
                 onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
@@ -622,7 +634,7 @@ export default function ServicesPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Duration (min)</label>
+                <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>DURATION (MIN)</label>
                 <input
                   type="number"
                   value={form.durationMins}
@@ -634,7 +646,7 @@ export default function ServicesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Price ($)</label>
+                <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>PRICE ($)</label>
                 <input
                   type="number"
                   value={priceInput}
@@ -646,19 +658,19 @@ export default function ServicesPage() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="btn-ghost px-4 py-2 text-sm cursor-pointer"
+                className="flex-1 btn-ghost py-2.5 text-sm cursor-pointer"
               >
-                Cancel
+                CANCEL
               </button>
               <button
                 type="submit"
-                className="btn-primary px-4 py-2 text-sm cursor-pointer"
+                className="flex-1 btn-primary py-2.5 text-sm cursor-pointer"
               >
-                {editingId ? 'Save Changes' : 'Create Service'}
+                {editingId ? 'SAVE CHANGES' : 'CREATE SERVICE'}
               </button>
             </div>
           </form>
