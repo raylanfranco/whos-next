@@ -156,11 +156,13 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-3xl overflow-y-auto flex-1 min-h-0">
-      <div>
+    <div className="overflow-y-auto flex-1 min-h-0">
+      <div className="mb-8">
         <h1 className="text-2xl font-bold text-white font-display tracking-tight">Settings</h1>
         <div className="font-mono-custom text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>MERCHANT_CONFIG // SYSTEM</div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
       {/* Business Info */}
       <section className="glass-panel-static p-6 tech-bracket">
@@ -442,6 +444,8 @@ export default function SettingsPage() {
         )}
       </section>
       </PlanGate>
+
+      </div>{/* close grid */}
 
       {/* Stripe toast */}
       {stripeToast && (
