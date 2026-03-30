@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, X, ChevronLeft, ChevronRight, Search, Download, Filter, MoreVertical } from 'lucide-react';
+import { Plus, X, ChevronLeft, ChevronRight, Search, Download, MoreVertical } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useMerchant } from '../../context/MerchantContext';
 import type { Customer } from '../../types';
