@@ -19,6 +19,17 @@ enum MerchantVertical {
   AUTOMOTIVE
   TATTOO
   BEAUTY
+  POWERSPORTS
+}
+
+enum VehicleType {
+  MOTORCYCLE
+  BOAT
+  ATV
+  UTV
+  SNOWMOBILE
+  CAR
+  OTHER
 }
 
 // ── Merchant ──────────────────────────────────────────────
@@ -118,14 +129,15 @@ model Customer {
 // ── Vehicle ───────────────────────────────────────────────
 
 model Vehicle {
-  id         String  @id @default(cuid())
-  customerId String  @map("customer_id")
+  id         String       @id @default(cuid())
+  customerId String       @map("customer_id")
+  type       VehicleType? // null = legacy automotive entries; POWERSPORTS adapter sets this
   year       Int?
   make       String?
   model      String?
   trim       String?
   notes      String?
-  photos     Json?   @map("photos_json") // ["https://s3.../photo1.jpg", ...]
+  photos     Json?        @map("photos_json") // ["https://blob.vercel-storage.com/photo1.jpg", ...]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
