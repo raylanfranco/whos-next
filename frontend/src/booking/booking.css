@@ -244,6 +244,20 @@
   transform: scale(1);
 }
 
+/* ── Service / category grid (Step 1) ──
+   Mirrors BayReady's 2-up density: single column on narrow embeds, two
+   columns once the iframe is wide enough to read cards side-by-side. */
+.bk-service-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+}
+@media (min-width: 640px) {
+  .bk-service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ── Step-enter animation ── */
 @keyframes bk-step-enter {
   from { opacity: 0; transform: translateY(8px); }

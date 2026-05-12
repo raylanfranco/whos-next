@@ -128,13 +128,7 @@ export function StepService({
         </p>
       </header>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 22rem), 1fr))',
-          gap: '1.5rem',
-        }}
-      >
+      <div className="bk-service-grid">
         {!selectedCategory && !skipCategories
           ? categories.map((cat) => {
               const catServices = services.filter((s) => (s.category || 'Other') === cat);
