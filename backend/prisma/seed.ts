@@ -234,30 +234,55 @@ const SERVICES: SeedService[] = [
 ];
 
 async function main() {
-  console.log('▶ Seeding BDCC merchant…');
+  // Two modes:
+  //   1. BDCC_MERCHANT_ID set  → target an existing merchant (registered via UI).
+  //      Skip merchant create; only sync hours + services + intake.
+  //   2. unset                  → upsert merchant by BDCC.email (original behaviour).
+  const targetId = process.env.BDCC_MERCHANT_ID?.trim();
+  let merchant;
 
-  const passwordHash = await bcrypt.hash(BDCC.defaultPassword, 12);
-
-  const merchant = await prisma.merchant.upsert({
-    where: { email: BDCC.email },
-    update: {
-      // Don't overwrite password / settings on re-run, but keep name + hours fresh.
-      name: BDCC.name,
-      timezone: BDCC.timezone,
-      shopHours: BDCC.shopHours,
-      vertical: 'POWERSPORTS',
-    },
-    create: {
-      email: BDCC.email,
-      passwordHash,
-      name: BDCC.name,
-      timezone: BDCC.timezone,
-      shopHours: BDCC.shopHours,
-      settings: BDCC.settings,
-      vertical: 'POWERSPORTS',
-      plan: 'GRANDFATHERED', // BDCCB is one of the grandfathered clients per VR-PLATFORM.md
-    },
-  });
+  if (targetId) {
+    console.log(`▶ Topping up BDCC services for existing merchant (${targetId})…`);
+    const found = await prisma.merchant.findUnique({ where: { id: targetId } });
+    if (!found) {
+      throw new Error(
+        `Merchant ${targetId} not found. Did you copy the correct cuid from the UI registration?`,
+      );
+    }
+    // Make sure the merchant is on the right vertical — if Billy registered
+    // through the new picker this is already POWERSPORTS, but it's cheap to enforce.
+    merchant = await prisma.merchant.update({
+      where: { id: targetId },
+      data: {
+        vertical: 'POWERSPORTS',
+        timezone: BDCC.timezone,
+        shopHours: BDCC.shopHours,
+      },
+    });
+  } else {
+    console.log('▶ Seeding BDCC merchant…');
+    const passwordHash = await bcrypt.hash(BDCC.defaultPassword, 12);
+    merchant = await prisma.merchant.upsert({
+      where: { email: BDCC.email },
+      update: {
+        // Don't overwrite password / settings on re-run, but keep name + hours fresh.
+        name: BDCC.name,
+        timezone: BDCC.timezone,
+        shopHours: BDCC.shopHours,
+        vertical: 'POWERSPORTS',
+      },
+      create: {
+        email: BDCC.email,
+        passwordHash,
+        name: BDCC.name,
+        timezone: BDCC.timezone,
+        shopHours: BDCC.shopHours,
+        settings: BDCC.settings,
+        vertical: 'POWERSPORTS',
+        plan: 'GRANDFATHERED', // BDCCB is one of the grandfathered clients per VR-PLATFORM.md
+      },
+    });
+  }
 
   console.log(`  merchant: ${merchant.name} (${merchant.id})`);
 
@@ -317,8 +342,11 @@ async function main() {
   }
 
   console.log('\n✓ BDCC seed complete.');
-  console.log(`  Login:    ${BDCC.email}`);
-  console.log(`  Password: ${BDCC.defaultPassword}  ← change after first login`);
+  if (!targetId) {
+    console.log(`  Login:    ${BDCC.email}`);
+    console.log(`  Password: ${BDCC.defaultPassword}  ← change after first login`);
+  }
+  console.log(`  Merchant: ${merchant.id}`);
   console.log(`  Vertical: POWERSPORTS`);
   console.log(`  Booking URL: https://<your-whos-next-frontend>/book/${merchant.id}`);
 }
