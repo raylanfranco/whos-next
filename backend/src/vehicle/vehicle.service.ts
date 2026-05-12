@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { VehicleType, Prisma } from '@prisma/client';
 
 @Injectable()
 export class VehicleService {
@@ -14,12 +15,20 @@ export class VehicleService {
 
   async create(data: {
     customerId: string;
+    type?: VehicleType;
     year?: number;
     make?: string;
     model?: string;
     trim?: string;
     notes?: string;
+    photos?: string[];
   }) {
-    return this.prisma.vehicle.create({ data });
+    const { photos, ...rest } = data;
+    return this.prisma.vehicle.create({
+      data: {
+        ...rest,
+        photos: photos ? (photos as Prisma.InputJsonValue) : undefined,
+      },
+    });
   }
 }

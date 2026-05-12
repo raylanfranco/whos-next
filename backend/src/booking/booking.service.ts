@@ -74,7 +74,14 @@ export class BookingService {
     date: string;       // "2026-02-15"
     time: string;       // "10:00"
     customer: { name: string; email?: string; phone?: string };
-    vehicle?: { year?: number; make?: string; model?: string; trim?: string };
+    vehicle?: {
+      type?: 'MOTORCYCLE' | 'BOAT' | 'ATV' | 'UTV' | 'SNOWMOBILE' | 'CAR' | 'OTHER';
+      year?: number;
+      make?: string;
+      model?: string;
+      trim?: string;
+      photos?: string[];
+    };
     intakeData?: Record<string, unknown>;
     notes?: string;
     depositAmountCents?: number;

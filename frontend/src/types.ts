@@ -13,7 +13,8 @@ export type PartStatus = 'NEEDED' | 'ORDERED' | 'RECEIVED';
 export type QuestionType = 'RADIO' | 'CHECKBOX' | 'TEXT' | 'SELECT' | 'TINT_ZONE' | 'PHOTO_UPLOAD' | 'BODY_MAP';
 
 export type MerchantPlan = 'FREE' | 'PRO' | 'GRANDFATHERED';
-export type MerchantVertical = 'GENERIC' | 'AUTOMOTIVE' | 'TATTOO' | 'BEAUTY';
+export type MerchantVertical = 'GENERIC' | 'AUTOMOTIVE' | 'TATTOO' | 'BEAUTY' | 'POWERSPORTS';
+export type VehicleType = 'MOTORCYCLE' | 'BOAT' | 'ATV' | 'UTV' | 'SNOWMOBILE' | 'CAR' | 'OTHER';
 
 export interface IntakeQuestion {
   id: string;
@@ -78,11 +79,13 @@ export interface Customer {
 export interface Vehicle {
   id: string;
   customerId: string;
+  type: VehicleType | null;
   year: number | null;
   make: string | null;
   model: string | null;
   trim: string | null;
   notes: string | null;
+  photos: string[] | null;
   createdAt: string;
   updatedAt: string;
 }

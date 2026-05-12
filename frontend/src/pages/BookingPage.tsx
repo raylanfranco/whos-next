@@ -10,14 +10,28 @@ import StripeCardForm from '../components/StripeCardForm';
 import DesignIntake from '../adapters/tattoo/DesignIntake';
 import ArtistSelector from '../adapters/tattoo/ArtistSelector';
 import { EMPTY_TATTOO_INTAKE, validateTattooIntake, type TattooIntakeData } from '../adapters/tattoo/TattooIntakeSchema';
+import PowersportsVehicleSelector from '../adapters/powersports/VehicleSelector';
 import type { StripeCardFormRef } from '../components/StripeCardForm';
 import type { IntakeData } from '../components/IntakeQuestionnaire';
-import type { Service, Merchant, IntakeQuestion } from '../types';
+import type { Service, Merchant, IntakeQuestion, VehicleType } from '../types';
 
 type Step = 'service' | 'vehicle' | 'tattoo' | 'datetime' | 'info' | 'payment' | 'confirm';
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
+}
+
+function formatVehicleType(type: VehicleType | ''): string {
+  switch (type) {
+    case 'MOTORCYCLE': return 'Motorcycle';
+    case 'BOAT': return 'Boat';
+    case 'ATV': return 'ATV';
+    case 'UTV': return 'UTV';
+    case 'SNOWMOBILE': return 'Snowmobile';
+    case 'CAR': return 'Car';
+    case 'OTHER': return 'Custom';
+    default: return '';
+  }
 }
 
 const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
@@ -58,7 +72,16 @@ export default function BookingPage() {
   const [slots, setSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({ name: '', email: '', phone: '' });
-  const [vehicleInfo, setVehicleInfo] = useState({ year: '', make: '', model: '', trim: '' });
+  // vehicleInfo carries the union of fields for both AUTOMOTIVE and POWERSPORTS verticals.
+  // `type` stays empty for AUTOMOTIVE (the legacy selector doesn't set it) and powers
+  // the new POWERSPORTS adapter.
+  const [vehicleInfo, setVehicleInfo] = useState<{
+    type: VehicleType | '';
+    year: string;
+    make: string;
+    model: string;
+    trim: string;
+  }>({ type: '', year: '', make: '', model: '', trim: '' });
   const [intakeData, setIntakeData] = useState<IntakeData>(EMPTY_INTAKE);
   const [dynamicQuestions, setDynamicQuestions] = useState<IntakeQuestion[]>([]);
   const [dynamicIntakeValues, setDynamicIntakeValues] = useState<Record<string, unknown>>({});
@@ -96,7 +119,8 @@ export default function BookingPage() {
 
   // Vertical-specific steps
   const vertical = merchant?.vertical || 'GENERIC';
-  const showVehicle = vertical === 'AUTOMOTIVE';
+  const showVehicle = vertical === 'AUTOMOTIVE' || vertical === 'POWERSPORTS';
+  const showPowersports = vertical === 'POWERSPORTS';
   const showTattoo = vertical === 'TATTOO';
 
   // Build steps dynamically based on vertical
@@ -264,10 +288,11 @@ export default function BookingPage() {
         date: selectedDate,
         time: selectedTime,
         customer: customerInfo,
-        vehicle: vehicleInfo.make ? {
+        vehicle: (vehicleInfo.make || vehicleInfo.type) ? {
+          type: vehicleInfo.type || undefined,
           year: vehicleInfo.year ? parseInt(vehicleInfo.year) : undefined,
-          make: vehicleInfo.make,
-          model: vehicleInfo.model,
+          make: vehicleInfo.make || undefined,
+          model: vehicleInfo.model || undefined,
           trim: vehicleInfo.trim || undefined,
         } : undefined,
         intakeData: Object.keys(intake).length > 0 ? intake : undefined,
@@ -285,7 +310,9 @@ export default function BookingPage() {
 
   function canAdvance() {
     if (step === 'service') return !!selectedService;
-    if (step === 'vehicle') return true; // Vehicle info is optional
+    // Vehicle info is optional for automotive (legacy NLA flow); for powersports
+    // the type picker is the whole point of the step — require it.
+    if (step === 'vehicle') return showPowersports ? !!vehicleInfo.type : true;
     if (step === 'tattoo') return validateTattooIntake(tattooIntake);
     if (step === 'datetime') return !!selectedDate && !!selectedTime;
     if (step === 'info') return !!customerInfo.name;
@@ -571,54 +598,78 @@ export default function BookingPage() {
             {/* ── Step 2: Vehicle ── */}
             {showVehicle && step === 'vehicle' && (
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Your Vehicle</h2>
-                <p className="text-sm text-slate-400 mb-8">Tell us about your vehicle so we can prepare for your appointment.</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">
+                  {showPowersports ? 'Your Build' : 'Your Vehicle'}
+                </h2>
+                <p className="text-sm text-slate-400 mb-8">
+                  {showPowersports
+                    ? 'Tell us what we’re working on so we can prep parts, paint, and tooling.'
+                    : 'Tell us about your vehicle so we can prepare for your appointment.'}
+                </p>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {showPowersports ? (
+                  // POWERSPORTS: no imagin.studio car preview (it's car-only) — full-width selector.
                   <div className="premium-card-static p-6">
-                    <VehicleSelector value={vehicleInfo} onChange={setVehicleInfo} />
+                    <PowersportsVehicleSelector
+                      value={vehicleInfo}
+                      onChange={setVehicleInfo}
+                    />
                   </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="premium-card-static p-6">
+                      <VehicleSelector
+                        value={{
+                          year: vehicleInfo.year,
+                          make: vehicleInfo.make,
+                          model: vehicleInfo.model,
+                          trim: vehicleInfo.trim,
+                        }}
+                        onChange={(v) => setVehicleInfo({ ...vehicleInfo, ...v })}
+                      />
+                    </div>
 
-                  {/* Vehicle image preview */}
-                  <div className="flex items-center justify-center">
-                    {vehicleImageUrl ? (
-                      <div className="w-full max-w-sm">
-                        <div className="premium-card-static p-6">
-                          <img
-                            src={vehicleImageUrl}
-                            alt={`${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`}
-                            className="w-full h-48 object-contain"
-                            onError={(e) => {
-                              const img = e.target as HTMLImageElement;
-                              const fallback = img.nextElementSibling as HTMLElement | null;
-                              img.style.display = 'none';
-                              if (fallback) fallback.classList.remove('hidden');
-                            }}
-                          />
-                          <div className="hidden flex-col items-center justify-center h-48 text-slate-400">
-                            <Car className="w-16 h-16 mb-2 opacity-30" />
-                            <span className="text-sm">{vehicleInfo.year} {vehicleInfo.make} {vehicleInfo.model}</span>
-                          </div>
-                          <div className="text-center mt-3">
-                            <div className="text-sm font-semibold text-slate-900 font-display">
-                              {vehicleInfo.year} {vehicleInfo.make} {vehicleInfo.model}
+                    {/* Vehicle image preview */}
+                    <div className="flex items-center justify-center">
+                      {vehicleImageUrl ? (
+                        <div className="w-full max-w-sm">
+                          <div className="premium-card-static p-6">
+                            <img
+                              src={vehicleImageUrl}
+                              alt={`${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`}
+                              className="w-full h-48 object-contain"
+                              onError={(e) => {
+                                const img = e.target as HTMLImageElement;
+                                const fallback = img.nextElementSibling as HTMLElement | null;
+                                img.style.display = 'none';
+                                if (fallback) fallback.classList.remove('hidden');
+                              }}
+                            />
+                            <div className="hidden flex-col items-center justify-center h-48 text-slate-400">
+                              <Car className="w-16 h-16 mb-2 opacity-30" />
+                              <span className="text-sm">{vehicleInfo.year} {vehicleInfo.make} {vehicleInfo.model}</span>
                             </div>
-                            {vehicleInfo.trim && (
-                              <div className="text-xs text-slate-500 mt-0.5">{vehicleInfo.trim}</div>
-                            )}
+                            <div className="text-center mt-3">
+                              <div className="text-sm font-semibold text-slate-900 font-display">
+                                {vehicleInfo.year} {vehicleInfo.make} {vehicleInfo.model}
+                              </div>
+                              {vehicleInfo.trim && (
+                                <div className="text-xs text-slate-500 mt-0.5">{vehicleInfo.trim}</div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="w-full max-w-sm premium-card-static border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center text-center">
-                        <Car className="w-16 h-16 text-slate-300 mb-3" />
-                        <p className="text-sm text-slate-400">
-                          Select your vehicle details to see a preview
-                        </p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="w-full max-w-sm premium-card-static border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center text-center">
+                          <Car className="w-16 h-16 text-slate-300 mb-3" />
+                          <p className="text-sm text-slate-400">
+                            Select your vehicle details to see a preview
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -757,7 +808,9 @@ export default function BookingPage() {
                       <p className="text-sm text-slate-400 mb-4">Answer a few questions to help us prepare.</p>
                       <DynamicIntakeForm questions={dynamicQuestions} values={dynamicIntakeValues} onChange={setDynamicIntakeValues} />
                     </div>
-                  ) : showVehicle ? (
+                  ) : showVehicle && !showPowersports ? (
+                    // Legacy NLA-style automotive intake. Powersports always uses
+                    // seeded DynamicIntakeForm questions — no legacy fallback.
                     <div className="pt-6 border-t border-slate-100">
                       <h3 className="text-lg font-semibold text-slate-900 mb-1 font-display">Vehicle Details</h3>
                       <p className="text-sm text-slate-400 mb-4">Help us prepare for your appointment.</p>
@@ -912,8 +965,19 @@ export default function BookingPage() {
                       <div className="text-sm"><strong>Name:</strong> {customerInfo.name}</div>
                       {customerInfo.email && <div className="text-sm"><strong>Email:</strong> {customerInfo.email}</div>}
                       {customerInfo.phone && <div className="text-sm"><strong>Phone:</strong> {customerInfo.phone}</div>}
-                      {vehicleInfo.make && (
-                        <div className="text-sm"><strong>Vehicle:</strong> {[vehicleInfo.year, vehicleInfo.make, vehicleInfo.model, vehicleInfo.trim].filter(Boolean).join(' ')}</div>
+                      {(vehicleInfo.make || vehicleInfo.type) && (
+                        <div className="text-sm">
+                          <strong>{showPowersports ? 'Build:' : 'Vehicle:'}</strong>{' '}
+                          {[
+                            vehicleInfo.type ? formatVehicleType(vehicleInfo.type) : null,
+                            vehicleInfo.year,
+                            vehicleInfo.make,
+                            vehicleInfo.model,
+                            vehicleInfo.trim,
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -952,7 +1016,7 @@ export default function BookingPage() {
                       </div>
                     )
                   ) : (
-                    showVehicle && (intakeData.currentSetup || intakeData.existingMods.length > 0 || intakeData.knownIssues) && (
+                    showVehicle && !showPowersports && (intakeData.currentSetup || intakeData.existingMods.length > 0 || intakeData.knownIssues) && (
                       <div className="border-t border-slate-200 pt-3 space-y-1">
                         <div className="text-sm font-semibold text-slate-700">Vehicle Intake</div>
                         {intakeData.currentSetup && (

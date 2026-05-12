@@ -18,6 +18,7 @@ import { NotificationModule } from './notification/notification.module';
 import { PushModule } from './push/push.module';
 import { PlanModule } from './plan/plan.module';
 import { BillingModule } from './billing/billing.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { BillingModule } from './billing/billing.module';
     PushModule,
     PlanModule,
     BillingModule,
+    UploadsModule,
   ],
   controllers: [AppController],
 })
