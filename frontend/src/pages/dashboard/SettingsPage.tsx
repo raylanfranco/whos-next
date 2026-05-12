@@ -1,12 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Save, Trash2, Plus, CreditCard, MessageSquare, Unplug, CheckCircle, ExternalLink } from 'lucide-react';
+import { Save, Trash2, Plus, CreditCard, MessageSquare, Unplug, CheckCircle, ExternalLink, Palette } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useMerchant } from '../../context/MerchantContext';
 import PlanGate from '../../components/PlanGate';
+import { resolveAccent } from '../../booking/accent';
 import type { AvailabilityRule, BlockedDate } from '../../types';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const ACCENT_PRESETS: { name: string; value: string }[] = [
+  { name: 'Red', value: '#E01020' },
+  { name: 'Amber', value: '#FFB347' },
+  { name: 'Orange', value: '#FF6B35' },
+  { name: 'Yellow', value: '#FFC857' },
+  { name: 'Green', value: '#22C55E' },
+  { name: 'Teal', value: '#14B8A6' },
+  { name: 'Blue', value: '#3B82F6' },
+  { name: 'Purple', value: '#A855F7' },
+  { name: 'Pink', value: '#EC4899' },
+];
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 export default function SettingsPage() {
   const { merchant, refetch } = useMerchant();
@@ -17,6 +32,9 @@ export default function SettingsPage() {
 
   const [depositPercent, setDepositPercent] = useState(0);
   const [depositSaved, setDepositSaved] = useState(false);
+
+  const [accentColor, setAccentColor] = useState<string>('');
+  const [accentSaved, setAccentSaved] = useState(false);
 
   const [smsEnabled, setSmsEnabled] = useState(false);
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
@@ -101,6 +119,7 @@ export default function SettingsPage() {
     setDepositPercent((settings?.depositPercent as number) ?? 0);
     setSmsEnabled((settings?.smsEnabled as boolean) ?? false);
     setGoogleReviewUrl((settings?.googleReviewUrl as string) ?? '');
+    setAccentColor(merchant.accentColor || '');
   }, [merchant]);
 
   async function saveInfo() {
@@ -116,6 +135,17 @@ export default function SettingsPage() {
     await api.patch(`/merchants/${merchant.id}`, { settings: { depositPercent } });
     setDepositSaved(true);
     setTimeout(() => setDepositSaved(false), 2000);
+    refetch();
+  }
+
+  async function saveAccent() {
+    if (!merchant) return;
+    const trimmed = accentColor.trim();
+    await api.patch(`/merchants/${merchant.id}`, {
+      accentColor: trimmed || null,
+    });
+    setAccentSaved(true);
+    setTimeout(() => setAccentSaved(false), 2000);
     refetch();
   }
 
@@ -196,6 +226,162 @@ export default function SettingsPage() {
             {infoSaved ? 'Saved!' : 'Save Info'}
           </button>
         </div>
+      </section>
+
+      {/* Booking Appearance */}
+      <section className="glass-panel-static p-6 tech-bracket">
+        <div className="flex items-center gap-2 mb-4">
+          <Palette className="w-5 h-5" style={{ color: 'var(--color-accent)' }} />
+          <h2 className="text-lg font-semibold text-white font-display">Booking Appearance</h2>
+        </div>
+        <p className="text-sm mb-4" style={{ color: 'var(--color-text-secondary)' }}>
+          Pick the accent color customers see in your booking flow — buttons, selected cards, progress bars. Leave unset to use the vertical default.
+        </p>
+        {(() => {
+          const trimmedAccent = accentColor.trim();
+          const isValidHex = HEX_RE.test(trimmedAccent);
+          const isCustom = trimmedAccent !== '' && !ACCENT_PRESETS.some((p) => p.value.toLowerCase() === trimmedAccent.toLowerCase());
+          const effective = isValidHex
+            ? trimmedAccent
+            : resolveAccent({ accentColor: null, vertical: merchant?.vertical ?? 'GENERIC' });
+          const usingDefault = trimmedAccent === '';
+          return (
+            <div className="space-y-4">
+              <div>
+                <label className="block font-mono-custom mb-2" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>PRESETS</label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {ACCENT_PRESETS.map((p) => {
+                    const selected = trimmedAccent.toLowerCase() === p.value.toLowerCase();
+                    return (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => setAccentColor(p.value)}
+                        className="flex flex-col items-center gap-1.5 p-2 transition-colors"
+                        style={{
+                          background: selected ? 'var(--color-bg-elevated)' : 'transparent',
+                          border: `1px solid ${selected ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                        }}
+                        aria-label={`Use ${p.name} accent`}
+                      >
+                        <span
+                          style={{
+                            width: '1.75rem',
+                            height: '1.75rem',
+                            backgroundColor: p.value,
+                            boxShadow: selected ? `0 0 12px ${p.value}55` : 'none',
+                          }}
+                        />
+                        <span className="font-mono-custom" style={{ fontSize: '9px', color: selected ? 'var(--color-text-primary)' : 'var(--color-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                          {p.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-mono-custom mb-1.5" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>CUSTOM HEX</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={accentColor}
+                    onChange={(e) => setAccentColor(e.target.value)}
+                    placeholder="#E01020 — leave empty for vertical default"
+                    className="premium-input flex-1 font-mono-custom"
+                  />
+                  {trimmedAccent !== '' && (
+                    <button
+                      type="button"
+                      onClick={() => setAccentColor('')}
+                      className="btn-ghost px-3 py-2 text-xs"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+                {trimmedAccent !== '' && !isValidHex && (
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>
+                    Must be a 6-digit hex like #E01020.
+                  </p>
+                )}
+              </div>
+
+              {/* Live preview */}
+              <div
+                className="p-4 space-y-3"
+                style={{
+                  background: 'var(--color-bg-base)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono-custom" style={{ fontSize: '9px', color: 'var(--color-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+                    Preview
+                  </span>
+                  {usingDefault && (
+                    <span className="font-mono-custom" style={{ fontSize: '9px', color: 'var(--color-text-muted)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                      Vertical Default
+                    </span>
+                  )}
+                  {isCustom && isValidHex && (
+                    <span className="font-mono-custom" style={{ fontSize: '9px', color: 'var(--color-text-muted)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                      Custom
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span
+                    style={{
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      backgroundColor: effective,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="font-mono-custom" style={{ fontSize: '10px', color: 'var(--color-text-muted)', letterSpacing: '0.15em' }}>STEP 3 OF 6</span>
+                      <div className="flex-1 h-[3px]" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                        <div style={{ height: '100%', width: '50%', backgroundColor: effective, boxShadow: `0 0 10px ${effective}80` }} />
+                      </div>
+                    </div>
+                    <span className="font-mono-custom" style={{ fontSize: '10px', color: 'var(--color-text-primary)', letterSpacing: '0.05em' }}>
+                      {effective.toUpperCase()}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled
+                    style={{
+                      backgroundColor: effective,
+                      color: '#0a0a0a',
+                      padding: '0.625rem 1.25rem',
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase',
+                      cursor: 'default',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={saveAccent}
+                disabled={trimmedAccent !== '' && !isValidHex}
+                className="flex items-center gap-2 btn-primary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Save className="w-4 h-4" />
+                {accentSaved ? 'Saved!' : 'Save Appearance'}
+              </button>
+            </div>
+          );
+        })()}
       </section>
 
       {/* Deposit Settings */}

@@ -1,0 +1,321 @@
+/* ═══════════════════════════════════════════════════════════
+   Booking Flow — Variant design language
+   Scoped to .bk-shell so the dashboard's amber/warm palette is untouched.
+   Per-merchant accent is set inline via --bk-accent on the shell wrapper.
+   ═══════════════════════════════════════════════════════════ */
+
+.bk-shell {
+  /* ── Surfaces (pure cool neutrals, distinct from the dashboard's warm tones) ── */
+  --bk-bg-base: #0a0a0a;
+  --bk-bg-surface: #111111;
+  --bk-bg-surface-elevated: #161616;
+  --bk-border-subtle: #222222;
+  --bk-border-focus: #444444;
+  --bk-text-main: #ffffff;
+  --bk-text-muted: #888888;
+
+  /* ── Accent fallback (overridden per-merchant via inline style) ── */
+  --bk-accent: #FFB347;
+  --bk-accent-rgb: 255, 179, 71;
+
+  background-color: var(--bk-bg-base);
+  color: var(--bk-text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.bk-mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+.bk-display { font-family: "Anton", "JetBrains Mono", ui-monospace, monospace; letter-spacing: 0.03em; }
+
+/* ── Surfaces ── */
+.bk-card {
+  background-color: var(--bk-bg-surface);
+  border: 1px solid var(--bk-border-subtle);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.bk-card:hover {
+  border-color: var(--bk-border-focus);
+}
+.bk-card-selected {
+  border-color: var(--bk-accent);
+  box-shadow: inset 0 0 80px rgba(var(--bk-accent-rgb), 0.10);
+}
+
+.bk-tile {
+  background-color: var(--bk-bg-surface-elevated);
+  border: 1px solid var(--bk-border-subtle);
+}
+
+/* ── Dot-grid backdrop used behind service icons / preview panels ── */
+.bk-dot-grid {
+  background-image: radial-gradient(var(--bk-border-subtle) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* ── Inputs ── */
+.bk-input,
+.bk-select {
+  width: 100%;
+  background-color: var(--bk-bg-surface);
+  border: 1px solid var(--bk-border-subtle);
+  color: var(--bk-text-main);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  padding: 1rem;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.bk-input:focus,
+.bk-select:focus {
+  border-color: var(--bk-accent);
+  background-color: var(--bk-bg-surface-elevated);
+}
+.bk-input::placeholder { color: var(--bk-text-muted); opacity: 0.6; }
+.bk-select:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Buttons ── */
+.bk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  cursor: pointer;
+}
+.bk-btn-primary {
+  background-color: var(--bk-accent);
+  color: #0a0a0a;
+  border-color: var(--bk-accent);
+  box-shadow: 0 0 20px rgba(var(--bk-accent-rgb), 0.2);
+}
+.bk-btn-primary:hover { background-color: #ffffff; border-color: #ffffff; }
+.bk-btn-primary:disabled {
+  background-color: var(--bk-border-subtle);
+  color: var(--bk-text-muted);
+  border-color: transparent;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}
+.bk-btn-ghost {
+  background: transparent;
+  color: var(--bk-text-muted);
+  border-color: var(--bk-border-subtle);
+}
+.bk-btn-ghost:hover { color: var(--bk-text-main); border-color: var(--bk-border-focus); }
+
+/* ── Breadcrumb ── */
+.bk-breadcrumb {
+  border-bottom: 1px solid var(--bk-border-subtle);
+  background-color: var(--bk-bg-base);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.bk-breadcrumb-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  overflow-x: auto;
+  white-space: nowrap;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.bk-breadcrumb-inner::-webkit-scrollbar { display: none; }
+
+.bk-breadcrumb-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--bk-text-muted);
+  opacity: 0.3;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.bk-breadcrumb-step.is-active {
+  color: var(--bk-accent);
+  font-weight: 700;
+  opacity: 1;
+}
+.bk-breadcrumb-step.is-complete {
+  color: var(--bk-text-muted);
+  opacity: 1;
+  cursor: pointer;
+}
+.bk-breadcrumb-step.is-complete:hover { color: var(--bk-text-main); }
+.bk-breadcrumb-step .bk-step-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: currentColor;
+}
+.bk-breadcrumb-sep { color: var(--bk-border-subtle); }
+
+/* ── Footer (sticky action bar) ── */
+.bk-footer {
+  border-top: 1px solid var(--bk-border-subtle);
+  background-color: rgba(17, 17, 17, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+.bk-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+}
+@media (min-width: 768px) {
+  .bk-footer-inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+}
+
+.bk-progress-track {
+  height: 4px;
+  background-color: var(--bk-bg-surface-elevated);
+  border: 1px solid var(--bk-border-subtle);
+  position: relative;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .bk-progress-track { width: 16rem; }
+}
+.bk-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: var(--bk-accent);
+  box-shadow: 0 0 10px rgba(var(--bk-accent-rgb), 0.5);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Heading accent bar (left red border on titles) ── */
+.bk-heading {
+  border-left: 4px solid var(--bk-accent);
+  padding-left: 1.5rem;
+}
+
+/* ── Selected card badge (top-left checkmark) ── */
+.bk-card-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: var(--bk-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  box-shadow: 0 0 15px rgba(var(--bk-accent-rgb), 0.5);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.bk-card-selected .bk-card-badge {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ── Step-enter animation ── */
+@keyframes bk-step-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.bk-step-enter { animation: bk-step-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ── Pulsing target-acquired dot (preview panel) ── */
+@keyframes bk-pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Scan-bar sweep (preview panel) ── */
+@keyframes bk-scan-bar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ── Intake-form host ──
+   StepInfo embeds the legacy DynamicIntakeForm / IntakeQuestionnaire as
+   children. Re-theme their amber-flavored utilities to match the booking
+   shell's dark palette + per-merchant accent. Layout untouched. */
+.bk-intake-host { color: var(--bk-text-main); }
+.bk-intake-host .premium-input,
+.bk-intake-host input[type="text"]:not(.bk-input):not(.bk-select),
+.bk-intake-host input[type="email"]:not(.bk-input):not(.bk-select),
+.bk-intake-host input[type="tel"]:not(.bk-input):not(.bk-select),
+.bk-intake-host input[type="number"]:not(.bk-input):not(.bk-select),
+.bk-intake-host textarea:not(.bk-input):not(.bk-select),
+.bk-intake-host select:not(.bk-input):not(.bk-select) {
+  background-color: var(--bk-bg-base);
+  border: 1px solid var(--bk-border-subtle);
+  color: var(--bk-text-main);
+}
+.bk-intake-host .premium-input:focus,
+.bk-intake-host input:not(.bk-input):not(.bk-select):focus,
+.bk-intake-host textarea:not(.bk-input):not(.bk-select):focus,
+.bk-intake-host select:not(.bk-input):not(.bk-select):focus {
+  border-color: var(--bk-accent);
+  box-shadow: 0 0 0 1px var(--bk-accent);
+  outline: none;
+}
+.bk-intake-host label { color: var(--bk-text-muted); }
+.bk-intake-host h3 { color: var(--bk-text-main); }
+.bk-intake-host .text-slate-700,
+.bk-intake-host .text-slate-900 { color: var(--bk-text-main); }
+.bk-intake-host .text-slate-400,
+.bk-intake-host .text-slate-500,
+.bk-intake-host .text-slate-600 { color: var(--bk-text-muted); }
+.bk-intake-host .border-slate-100,
+.bk-intake-host .border-slate-200 { border-color: var(--bk-border-subtle); }
+
+/* ── Legacy step wrapper ──
+   Hosts un-ported steps inside the new dark Variant shell. Restores a light
+   surface + dark text so existing slate-styled content stays legible until
+   each step is ported one by one. */
+.bk-legacy-step {
+  background-color: #F8F7F4;
+  color: #0D0B0A;
+  max-width: 768px;
+  margin: 1.5rem auto;
+  padding: 2rem 1.5rem;
+  border: 1px solid var(--bk-border-subtle);
+}
+.bk-legacy-step .text-slate-900 { color: #0D0B0A; }
+.bk-legacy-step .text-slate-700 { color: #334155; }
+.bk-legacy-step .text-slate-600 { color: #475569; }
+.bk-legacy-step .text-slate-500 { color: #64748B; }
+.bk-legacy-step .text-slate-400 { color: #94A3B8; }
+.bk-legacy-step .text-slate-300 { color: #CBD5E1; }
+.bk-legacy-step .bg-warm-50 { background-color: #ECEAE5; }
+@media (min-width: 1024px) {
+  .bk-legacy-step { max-width: 900px; }
+}

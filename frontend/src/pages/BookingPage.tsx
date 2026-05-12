@@ -1,16 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Check, Clock, CreditCard, ShieldCheck, Car } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { api } from '../lib/api';
-import BookingSidebar from '../components/BookingSidebar';
-import VehicleSelector from '../components/VehicleSelector';
+import { StepService } from '../booking/StepService';
+import { StepVehicle } from '../booking/StepVehicle';
+import { StepDateTime } from '../booking/StepDateTime';
+import { StepInfo } from '../booking/StepInfo';
+import { StepPayment } from '../booking/StepPayment';
+import { StepTattoo } from '../booking/StepTattoo';
+import { StepConfirm, BookingConfirmed } from '../booking/StepConfirm';
+import { BookingShell, BookingBreadcrumb, BookingFooter } from '../booking/BookingShell';
 import IntakeQuestionnaire, { EMPTY_INTAKE } from '../components/IntakeQuestionnaire';
 import DynamicIntakeForm from '../components/DynamicIntakeForm';
-import StripeCardForm from '../components/StripeCardForm';
 import DesignIntake from '../adapters/tattoo/DesignIntake';
 import ArtistSelector from '../adapters/tattoo/ArtistSelector';
 import { EMPTY_TATTOO_INTAKE, validateTattooIntake, type TattooIntakeData } from '../adapters/tattoo/TattooIntakeSchema';
-import PowersportsVehicleSelector from '../adapters/powersports/VehicleSelector';
 import type { StripeCardFormRef } from '../components/StripeCardForm';
 import type { IntakeData } from '../components/IntakeQuestionnaire';
 import type { Service, Merchant, IntakeQuestion, VehicleType } from '../types';
@@ -21,39 +25,6 @@ function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-function formatVehicleType(type: VehicleType | ''): string {
-  switch (type) {
-    case 'MOTORCYCLE': return 'Motorcycle';
-    case 'BOAT': return 'Boat';
-    case 'ATV': return 'ATV';
-    case 'UTV': return 'UTV';
-    case 'SNOWMOBILE': return 'Snowmobile';
-    case 'CAR': return 'Car';
-    case 'OTHER': return 'Custom';
-    default: return '';
-  }
-}
-
-const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
-  'tints': '/images/services/tints.jpg',
-  'window tinting': '/images/services/tints.jpg',
-  'radio installation': '/images/services/radio.jpg',
-  'car audio': '/images/services/car-audio.jpg',
-  'intoxalock': '/images/services/intoxalock.jpg',
-  'remote start': '/images/services/remote-start.jpg',
-  'lighting': '/images/services/lighting.jpg',
-  'ppf': '/images/services/ppf.jpg',
-  'paint protection': '/images/services/ppf.jpg',
-  'accessories': '/images/services/accessories.jpg',
-  'security': '/images/services/security.jpg',
-};
-
-function getServiceImage(service: Service): string | null {
-  if (service.imageUrl) return service.imageUrl;
-  const cat = (service.category || '').toLowerCase();
-  return DEFAULT_CATEGORY_IMAGES[cat] || null;
-}
-
 export default function BookingPage() {
   const { merchantId } = useParams<{ merchantId: string }>();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -62,6 +33,7 @@ export default function BookingPage() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<Step>('service');
   const [booked, setBooked] = useState(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Selections
@@ -88,11 +60,6 @@ export default function BookingPage() {
   const [tattooIntake, setTattooIntake] = useState<TattooIntakeData>(EMPTY_TATTOO_INTAKE);
   const [selectedArtist, setSelectedArtist] = useState('');
   const [notes, setNotes] = useState('');
-
-  // Vehicle image
-  const vehicleImageUrl = vehicleInfo.year && vehicleInfo.make && vehicleInfo.model
-    ? `https://cdn.imagin.studio/getimage?customer=img&make=${encodeURIComponent(vehicleInfo.make)}&modelFamily=${encodeURIComponent(vehicleInfo.model)}&modelYear=${vehicleInfo.year}&angle=01`
-    : null;
 
   // Payment
   const cardFormRef = useRef<StripeCardFormRef>(null);
@@ -282,7 +249,7 @@ export default function BookingPage() {
     }
 
     try {
-      await api.post('/bookings', {
+      const created = await api.post<{ id: string }>('/bookings', {
         merchantId,
         serviceId: selectedService.id,
         date: selectedDate,
@@ -300,12 +267,33 @@ export default function BookingPage() {
         depositAmountCents: chargeId ? depositAmountCents : undefined,
         stripePaymentIntentId: chargeId || undefined,
       });
+      setBookingId(created?.id ?? null);
       setBooked(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Booking failed');
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleBookAnother() {
+    setBooked(false);
+    setBookingId(null);
+    setSelectedCategory(null);
+    setSelectedService(null);
+    setSelectedDate('');
+    setSelectedTime('');
+    setSlots([]);
+    setVehicleInfo({ type: '', year: '', make: '', model: '', trim: '' });
+    setCustomerInfo({ name: '', email: '', phone: '' });
+    setIntakeData(EMPTY_INTAKE);
+    setDynamicIntakeValues({});
+    setTattooIntake(EMPTY_TATTOO_INTAKE);
+    setSelectedArtist('');
+    setNotes('');
+    setChargeId(null);
+    setPaymentError(null);
+    setStep('service');
   }
 
   function canAdvance() {
@@ -325,32 +313,50 @@ export default function BookingPage() {
     if (next) setStep(next.key);
   }
 
-  function goBack() {
-    const prev = STEPS[stepIndex - 1];
-    if (prev) setStep(prev.key);
-  }
-
   function goToStep(targetStep: Step) {
     const targetIndex = STEPS.findIndex((s) => s.key === targetStep);
     if (targetIndex <= stepIndex) setStep(targetStep);
   }
 
-  function getDateOptions() {
-    const dates: string[] = [];
-    const today = new Date();
-    for (let i = 1; i <= 30; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() + i);
-      dates.push(d.toISOString().split('T')[0]);
+  function renderIntakeSummary() {
+    if (dynamicQuestions.length > 0) {
+      const hasAny = Object.keys(dynamicIntakeValues).some((k) => {
+        const v = dynamicIntakeValues[k];
+        if (v === undefined || v === '') return false;
+        if (Array.isArray(v) && v.length === 0) return false;
+        if (typeof v === 'object' && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length === 0) return false;
+        return true;
+      });
+      if (!hasAny) return null;
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {dynamicQuestions.map((q) => {
+            const val = dynamicIntakeValues[q.id];
+            if (val === undefined || val === '' || (Array.isArray(val) && val.length === 0)) return null;
+            if (typeof val === 'object' && !Array.isArray(val) && Object.keys(val as Record<string, unknown>).length === 0) return null;
+            const display =
+              typeof val === 'object' && !Array.isArray(val)
+                ? Object.entries(val as Record<string, string>)
+                    .map(([zoneId, shade]) => `${zoneId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}: ${shade}`)
+                    .join(', ')
+                : Array.isArray(val)
+                  ? val.join(', ')
+                  : String(val);
+            return <IntakeSummaryRow key={q.id} label={q.question} value={display} />;
+          })}
+        </div>
+      );
     }
-    return dates;
-  }
-
-  function formatSlotTime(time: string) {
-    const [h, m] = time.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+    if (showVehicle && !showPowersports && (intakeData.currentSetup || intakeData.existingMods.length > 0 || intakeData.knownIssues)) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {intakeData.currentSetup && <IntakeSummaryRow label="Current setup" value={intakeData.currentSetup.replace(/_/g, ' ')} />}
+          {intakeData.existingMods.length > 0 && <IntakeSummaryRow label="Existing mods" value={intakeData.existingMods.join(', ')} />}
+          {intakeData.knownIssues && <IntakeSummaryRow label="Known issues" value={intakeData.knownIssues} />}
+        </div>
+      );
+    }
+    return null;
   }
 
   // ── Loading / Error / Success screens ──
@@ -379,712 +385,264 @@ export default function BookingPage() {
 
   if (booked) {
     return (
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center p-6">
-        <div className="premium-card-static p-8 sm:p-10 text-center max-w-md animate-step-enter">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5 animate-pulse-ring">
-            <Check className="w-10 h-10 text-green-600 animate-check-pop" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight font-display">Booking Confirmed!</h2>
-          <p className="text-slate-600 mb-1">
-            <span className="inline-block bg-primary/8 text-primary text-xs font-semibold px-3 py-1 rounded-full">{selectedService?.name}</span>
-          </p>
-          <p className="text-slate-600 mt-3">
-            {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}{' '}
-            at {formatSlotTime(selectedTime)}
-          </p>
-          {chargeId && (
-            <p className="text-sm text-green-600 mt-3 font-medium">
-              Deposit of {formatPrice(depositAmountCents)} paid successfully.
-            </p>
-          )}
-          <p className="text-sm text-slate-400 mt-5">
-            You'll receive a confirmation at {customerInfo.email || 'your contact info'}.
-          </p>
-        </div>
-      </div>
+      <BookingShell merchant={merchant}>
+        <BookingBreadcrumb steps={STEPS} currentStep={'confirm'} allComplete />
+        <BookingConfirmed
+          details={{
+            service: selectedService,
+            date: selectedDate,
+            time: selectedTime,
+            vehicle: vehicleInfo,
+            customer: customerInfo,
+            notes,
+            deposit: { required: requiresDeposit, amountCents: depositAmountCents, paid: !!chargeId },
+            merchant,
+          }}
+          bookingId={bookingId}
+          onBookAnother={handleBookAnother}
+        />
+      </BookingShell>
     );
   }
 
   // ── Main Wizard Layout ──
 
   return (
-    <div className="min-h-screen bg-warm-50 flex">
-      {/* Sidebar — desktop only */}
-      {merchant && <BookingSidebar merchant={merchant} />}
+    <BookingShell merchant={merchant}>
+      <BookingBreadcrumb steps={STEPS} currentStep={step} onStepClick={goToStep} />
 
-      {/* Main wizard content */}
-      <div className="flex-1 flex flex-col min-h-screen">
-        {/* Mobile header */}
-        <header className="lg:hidden bg-white/80 backdrop-blur-sm border-b border-slate-100 px-4 py-3 shadow-sm">
-          <h1 className="text-base font-bold text-slate-900 font-display tracking-tight">
-            Book with <span className="text-primary">{merchant?.name}</span>
-          </h1>
-        </header>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }} key={step}>
+            {/* ── Step 1: Service (Variant redesign) ── */}
+            {step === 'service' && (
+              <StepService
+                merchant={merchant}
+                services={services}
+                selectedCategory={selectedCategory}
+                onSelectCategory={(cat) => { setSelectedCategory(cat); if (cat === null) setSelectedService(null); }}
+                selectedService={selectedService}
+                onSelectService={setSelectedService}
+              />
+            )}
 
-        {/* Breadcrumb progress */}
-        <nav className="bg-white/80 backdrop-blur-sm border-b border-slate-100 px-4 sm:px-6 py-3">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-1.5 overflow-x-auto">
-              {STEPS.map((s, i) => (
-                <div key={s.key} className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => goToStep(s.key)}
-                    disabled={i > stepIndex}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      i === stepIndex
-                        ? 'bg-primary/10 text-primary'
-                        : i < stepIndex
-                          ? 'text-slate-600 hover:text-primary cursor-pointer'
-                          : 'text-slate-400 cursor-default'
-                    }`}
-                  >
-                    {i < stepIndex ? (
-                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                    ) : (
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
-                        i === stepIndex ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'
-                      }`}>
-                        {i + 1}
-                      </div>
-                    )}
-                    <span className="hidden sm:inline">{s.label}</span>
-                  </button>
-                  {i < STEPS.length - 1 && (
-                    <div className="w-4 border-t border-dashed border-slate-300 shrink-0" />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </nav>
-
-        {/* Step content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 animate-step-enter" key={step}>
-
-            {/* ── Step 1: Service ── */}
-            {step === 'service' && (() => {
-              const grouped = new Map<string, Service[]>();
-              for (const s of services) {
-                const cat = s.category || 'Other';
-                if (!grouped.has(cat)) grouped.set(cat, []);
-                grouped.get(cat)!.push(s);
-              }
-              const categories = Array.from(grouped.keys());
-              const skipCategories = categories.length <= 1;
-
-              const visibleServices = selectedCategory
-                ? grouped.get(selectedCategory) || []
-                : skipCategories
-                  ? services
-                  : [];
-
-              return (
-                <div>
-                  {/* Category phase */}
-                  {!selectedCategory && !skipCategories && (
-                    <>
-                      <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">What are you looking for?</h2>
-                      <p className="text-sm text-slate-400 mb-8">Select a category to get started.</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        {categories.map((cat) => {
-                          const catServices = grouped.get(cat)!;
-                          const firstImage = catServices.find((s) => getServiceImage(s))?.imageUrl
-                            || DEFAULT_CATEGORY_IMAGES[(cat || '').toLowerCase()]
-                            || null;
-                          return (
-                            <button
-                              key={cat}
-                              onClick={() => setSelectedCategory(cat)}
-                              className="premium-card group text-left overflow-hidden"
-                            >
-                              {firstImage ? (
-                                <div className="h-32 bg-slate-100 overflow-hidden">
-                                  <img src={firstImage} alt={cat} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                </div>
-                              ) : (
-                                <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                                  <span className="text-3xl font-bold text-primary/20">{cat.charAt(0)}</span>
-                                </div>
-                              )}
-                              <div className="p-4">
-                                <div className="font-semibold text-slate-900 group-hover:text-primary transition-colors font-display">{cat}</div>
-                                <div className="text-sm text-slate-500 mt-0.5">
-                                  {catServices.length} service{catServices.length !== 1 ? 's' : ''}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Service cards phase */}
-                  {(selectedCategory || skipCategories) && (
-                    <>
-                      <div className="flex items-center gap-3 mb-8">
-                        {selectedCategory && !skipCategories && (
-                          <button
-                            onClick={() => { setSelectedCategory(null); setSelectedService(null); }}
-                            className="text-sm text-primary hover:text-primary-dark flex items-center gap-1"
-                          >
-                            <ChevronLeft className="w-4 h-4" /> Back
-                          </button>
-                        )}
-                        <div>
-                          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight font-display heading-accent">
-                            {selectedCategory && !skipCategories ? selectedCategory : 'Choose a Service'}
-                          </h2>
-                          <p className="text-sm text-slate-400 mt-0.5">Select the service you'd like to book.</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        {visibleServices.map((s) => (
-                          <button
-                            key={s.id}
-                            onClick={() => setSelectedService(s)}
-                            className={`group text-left overflow-hidden transition-all ${
-                              selectedService?.id === s.id
-                                ? 'premium-card premium-card-selected'
-                                : 'premium-card'
-                            }`}
-                          >
-                            {getServiceImage(s) ? (
-                              <div className="h-36 bg-slate-100 overflow-hidden relative">
-                                <img src={getServiceImage(s)!} alt={s.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-slate-900 shadow-sm">
-                                  {formatPrice(s.priceCents)}
-                                </div>
-                                {selectedService?.id === s.id && (
-                                  <div className="absolute top-2.5 left-2.5 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                                    <Check className="w-3.5 h-3.5 text-white" />
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="h-36 bg-gradient-to-br from-primary/10 to-slate-50 flex items-center justify-center relative">
-                                <span className="text-4xl font-bold text-primary/15">{s.name.charAt(0)}</span>
-                                <div className="absolute top-2.5 right-2.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-slate-900 shadow-sm">
-                                  {formatPrice(s.priceCents)}
-                                </div>
-                                {selectedService?.id === s.id && (
-                                  <div className="absolute top-2.5 left-2.5 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                                    <Check className="w-3.5 h-3.5 text-white" />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            <div className="p-4">
-                              <div className="font-semibold text-slate-900 font-display">{s.name}</div>
-                              {s.description && <div className="text-sm text-slate-500 mt-1 line-clamp-2">{s.description}</div>}
-                              <div className="flex items-center gap-3 mt-3 text-sm">
-                                <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs font-medium">
-                                  <Clock className="w-3 h-3" />{s.durationMins} min
-                                </span>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* ── Step 2: Vehicle ── */}
+            {/* ── Step 2: Vehicle (Variant redesign) ── */}
             {showVehicle && step === 'vehicle' && (
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">
-                  {showPowersports ? 'Your Build' : 'Your Vehicle'}
-                </h2>
-                <p className="text-sm text-slate-400 mb-8">
-                  {showPowersports
-                    ? 'Tell us what we’re working on so we can prep parts, paint, and tooling.'
-                    : 'Tell us about your vehicle so we can prepare for your appointment.'}
-                </p>
-
-                {showPowersports ? (
-                  // POWERSPORTS: no imagin.studio car preview (it's car-only) — full-width selector.
-                  <div className="premium-card-static p-6">
-                    <PowersportsVehicleSelector
-                      value={vehicleInfo}
-                      onChange={setVehicleInfo}
-                    />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="premium-card-static p-6">
-                      <VehicleSelector
-                        value={{
-                          year: vehicleInfo.year,
-                          make: vehicleInfo.make,
-                          model: vehicleInfo.model,
-                          trim: vehicleInfo.trim,
-                        }}
-                        onChange={(v) => setVehicleInfo({ ...vehicleInfo, ...v })}
-                      />
-                    </div>
-
-                    {/* Vehicle image preview */}
-                    <div className="flex items-center justify-center">
-                      {vehicleImageUrl ? (
-                        <div className="w-full max-w-sm">
-                          <div className="premium-card-static p-6">
-                            <img
-                              src={vehicleImageUrl}
-                              alt={`${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}`}
-                              className="w-full h-48 object-contain"
-                              onError={(e) => {
-                                const img = e.target as HTMLImageElement;
-                                const fallback = img.nextElementSibling as HTMLElement | null;
-                                img.style.display = 'none';
-                                if (fallback) fallback.classList.remove('hidden');
-                              }}
-                            />
-                            <div className="hidden flex-col items-center justify-center h-48 text-slate-400">
-                              <Car className="w-16 h-16 mb-2 opacity-30" />
-                              <span className="text-sm">{vehicleInfo.year} {vehicleInfo.make} {vehicleInfo.model}</span>
-                            </div>
-                            <div className="text-center mt-3">
-                              <div className="text-sm font-semibold text-slate-900 font-display">
-                                {vehicleInfo.year} {vehicleInfo.make} {vehicleInfo.model}
-                              </div>
-                              {vehicleInfo.trim && (
-                                <div className="text-xs text-slate-500 mt-0.5">{vehicleInfo.trim}</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-full max-w-sm premium-card-static border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center text-center">
-                          <Car className="w-16 h-16 text-slate-300 mb-3" />
-                          <p className="text-sm text-slate-400">
-                            Select your vehicle details to see a preview
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <StepVehicle
+                merchant={merchant}
+                value={vehicleInfo}
+                onChange={setVehicleInfo}
+              />
             )}
 
-            {/* ── Tattoo Design Step ── */}
+            {/* ── Tattoo Design Step (Variant redesign) ── */}
             {showTattoo && step === 'tattoo' && (
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Design Details</h2>
-                <p className="text-sm text-slate-400 mb-8">Tell us about the tattoo you want.</p>
-
-                <div className="premium-card-static p-6 sm:p-8 space-y-6">
-                  <DesignIntake value={tattooIntake} onChange={setTattooIntake} />
-
-                  {/* Artist selector — from merchant settings */}
-                  {merchant?.settings && !!(merchant.settings as Record<string, unknown>).artists && (
-                    <div className="pt-6" style={{ borderTop: '1px solid var(--color-border)' }}>
-                      <ArtistSelector
-                        artists={(merchant.settings as Record<string, unknown>).artists as { id: string; name: string; specialties: string[]; photoUrl?: string }[]}
-                        value={selectedArtist}
-                        onChange={setSelectedArtist}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── Date & Time Step ── */}
-            {step === 'datetime' && (
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Pick a Date & Time</h2>
-                <p className="text-sm text-slate-400 mb-8">
-                  {selectedService && (
-                    <span className="inline-flex items-center gap-1.5">
-                      Booking <span className="inline-block bg-primary/8 text-primary text-xs font-semibold px-2.5 py-0.5 rounded-full">{selectedService.name}</span>
-                      <span className="text-slate-300">·</span> {selectedService.durationMins} min
-                    </span>
-                  )}
-                </p>
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Date</label>
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                    {getDateOptions().map((d) => {
-                      const date = new Date(d + 'T00:00:00');
-                      return (
-                        <button
-                          key={d}
-                          onClick={() => setSelectedDate(d)}
-                          className={`p-2.5 rounded-lg text-center text-sm transition-all ${
-                            selectedDate === d
-                              ? 'bg-primary text-white font-medium shadow-lg shadow-primary/25'
-                              : 'bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm'
-                          }`}
-                        >
-                          <div className={`text-xs ${selectedDate === d ? 'text-white/70' : 'text-slate-500'}`}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                          <div className="font-medium">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {selectedDate && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Available Times</label>
-                    {slotsLoading ? (
-                      <div className="premium-card-static p-4 text-center">
-                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                        <span className="text-sm text-slate-500">Loading times...</span>
-                      </div>
-                    ) : slots.length === 0 ? (
-                      <div className="premium-card-static p-6 text-center">
-                        <p className="text-sm text-slate-500">No available times for this date. Try another day.</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                        {slots.map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => setSelectedTime(t)}
-                            className={`py-2.5 px-3 rounded-full text-center text-sm font-medium transition-all ${
-                              selectedTime === t
-                                ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                                : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:shadow-sm'
-                            }`}
-                          >
-                            {formatSlotTime(t)}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Step 4: Your Info + Intake ── */}
-            {step === 'info' && (
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Your Information</h2>
-                <p className="text-sm text-slate-400 mb-8">How can we reach you?</p>
-                <div className="premium-card-static p-6 sm:p-8 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Full Name *</label>
-                    <input
-                      value={customerInfo.name}
-                      onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                      required
-                      className="premium-input w-full"
+              <StepTattoo
+                designIntakeSlot={<DesignIntake value={tattooIntake} onChange={setTattooIntake} />}
+                artistSlot={
+                  merchant?.settings && !!(merchant.settings as Record<string, unknown>).artists ? (
+                    <ArtistSelector
+                      artists={(merchant.settings as Record<string, unknown>).artists as { id: string; name: string; specialties: string[]; photoUrl?: string }[]}
+                      value={selectedArtist}
+                      onChange={setSelectedArtist}
                     />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                      <input
-                        type="email"
-                        value={customerInfo.email}
-                        onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                        className="premium-input w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                      <input
-                        type="tel"
-                        value={customerInfo.phone}
-                        onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                        className="premium-input w-full"
-                      />
-                    </div>
-                  </div>
+                  ) : undefined
+                }
+              />
+            )}
 
-                  {/* Intake questionnaire — dynamic or legacy fallback */}
-                  {dynamicQuestions.length > 0 ? (
-                    <div className="pt-6 border-t border-slate-100">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-1 font-display">Service Details</h3>
-                      <p className="text-sm text-slate-400 mb-4">Answer a few questions to help us prepare.</p>
-                      <DynamicIntakeForm questions={dynamicQuestions} values={dynamicIntakeValues} onChange={setDynamicIntakeValues} />
-                    </div>
+            {/* ── Step 3: Date & Time (Variant redesign) ── */}
+            {step === 'datetime' && (
+              <StepDateTime
+                merchant={merchant}
+                service={selectedService}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                slots={slots}
+                slotsLoading={slotsLoading}
+                onSelectDate={setSelectedDate}
+                onSelectTime={setSelectedTime}
+              />
+            )}
+
+            {/* ── Step 4: Your Info + Intake (Variant redesign) ── */}
+            {step === 'info' && (
+              <StepInfo
+                customerInfo={customerInfo}
+                onCustomerInfoChange={setCustomerInfo}
+                notes={notes}
+                onNotesChange={setNotes}
+                intakeSlot={
+                  dynamicQuestions.length > 0 ? (
+                    <DynamicIntakeForm
+                      questions={dynamicQuestions}
+                      values={dynamicIntakeValues}
+                      onChange={setDynamicIntakeValues}
+                    />
                   ) : showVehicle && !showPowersports ? (
                     // Legacy NLA-style automotive intake. Powersports always uses
                     // seeded DynamicIntakeForm questions — no legacy fallback.
-                    <div className="pt-6 border-t border-slate-100">
-                      <h3 className="text-lg font-semibold text-slate-900 mb-1 font-display">Vehicle Details</h3>
-                      <p className="text-sm text-slate-400 mb-4">Help us prepare for your appointment.</p>
-                      <IntakeQuestionnaire value={intakeData} onChange={setIntakeData} />
-                    </div>
-                  ) : null}
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Additional Notes <span className="text-slate-400 font-normal">(optional)</span></label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={2}
-                      placeholder="Anything else we should know?"
-                      className="premium-input w-full"
-                    />
-                  </div>
-                </div>
-              </div>
+                    <IntakeQuestionnaire value={intakeData} onChange={setIntakeData} />
+                  ) : null
+                }
+              />
             )}
 
-            {/* ── Step 5: Payment (conditional) ── */}
+            {/* ── Step 5: Payment (Variant redesign) ── */}
             {step === 'payment' && (
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Secure Deposit Payment</h2>
-                <p className="text-sm text-slate-400 mb-8">A deposit is required to confirm your booking.</p>
-
-                <div className="premium-card-static shadow-[var(--shadow-elevated)] p-6 sm:p-8 mb-6">
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                      <CreditCard className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900 font-display">Deposit Required</div>
-                      <div className="text-xs text-slate-500">
-                        {depositPercent}% of service total ({formatPrice(selectedService?.priceCents || 0)})
-                      </div>
-                    </div>
-                    <div className="ml-auto text-right">
-                      <div className="text-2xl font-bold text-slate-900 font-display">{formatPrice(depositAmountCents)}</div>
-                      <div className="text-xs text-slate-400">due now</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-warm-50 rounded-xl p-4 mb-5 text-xs text-slate-600 space-y-1.5">
-                    <div className="flex justify-between">
-                      <span>Service total</span>
-                      <span>{formatPrice(selectedService?.priceCents || 0)}</span>
-                    </div>
-                    <div className="flex justify-between font-medium text-primary">
-                      <span>Deposit ({depositPercent}%)</span>
-                      <span>{formatPrice(depositAmountCents)}</span>
-                    </div>
-                    <div className="flex justify-between border-t border-slate-200 pt-1.5">
-                      <span>Remaining balance (due at appointment)</span>
-                      <span>{formatPrice((selectedService?.priceCents || 0) - depositAmountCents)}</span>
-                    </div>
-                  </div>
-
-                  {chargeId ? (
-                    <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-4">
-                      <Check className="w-5 h-5 text-green-600" />
-                      <div>
-                        <div className="text-sm font-medium text-green-800">Deposit paid successfully!</div>
-                        <div className="text-xs text-green-600">You may proceed to confirm your booking.</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <StripeCardForm ref={cardFormRef} publishableKey={stripePublishableKey || undefined} onError={setPaymentError} />
-
-                      {paymentError && (
-                        <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-                          {paymentError}
-                        </div>
-                      )}
-
-                      <button
-                        onClick={handlePayDeposit}
-                        disabled={paymentProcessing}
-                        className="mt-5 w-full btn-primary flex items-center justify-center gap-2 px-8 py-3.5 text-base font-display"
-                      >
-                        {paymentProcessing ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="w-5 h-5" />
-                            Pay {formatPrice(depositAmountCents)} Deposit
-                          </>
-                        )}
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <ShieldCheck className="w-4 h-4" />
-                  Card details are handled securely by Stripe. We never see your full card number.
-                </div>
-              </div>
+              <StepPayment
+                merchant={merchant}
+                service={selectedService}
+                vehicle={vehicleInfo}
+                date={selectedDate}
+                time={selectedTime}
+                depositAmountCents={depositAmountCents}
+                depositPercent={depositPercent}
+                chargeId={chargeId}
+                paymentProcessing={paymentProcessing}
+                paymentError={paymentError}
+                stripePublishableKey={stripePublishableKey}
+                cardFormRef={cardFormRef}
+                onError={setPaymentError}
+                onPay={handlePayDeposit}
+              />
             )}
 
-            {/* ── Step 6: Confirm ── */}
+            {/* ── Step 6: Confirm (Variant redesign) ── */}
             {step === 'confirm' && (
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1 tracking-tight font-display heading-accent">Confirm Your Booking</h2>
-                <p className="text-sm text-slate-400 mb-8">Review the details below and confirm.</p>
-
-                <div className="premium-card-static shadow-[var(--shadow-elevated)] p-6 sm:p-8 space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-500">Service</span>
-                    <span className="text-sm font-medium font-display">{selectedService?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-500">Date</span>
-                    <span className="text-sm font-medium">
-                      {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-500">Time</span>
-                    <span className="text-sm font-medium">{formatSlotTime(selectedTime)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-500">Duration</span>
-                    <span className="text-sm font-medium">{selectedService?.durationMins} min</span>
-                  </div>
-                  <div className="flex justify-between border-t border-slate-100 pt-3">
-                    <span className="text-base font-semibold text-slate-900 font-display">Total</span>
-                    <span className="text-lg font-bold text-slate-900 font-display">{formatPrice(selectedService?.priceCents || 0)}</span>
-                  </div>
-
-                  {chargeId && (
-                    <div className="flex justify-between text-green-600">
-                      <span className="text-sm flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Deposit paid</span>
-                      <span className="text-sm font-medium">{formatPrice(depositAmountCents)}</span>
-                    </div>
-                  )}
-                  {chargeId && (
-                    <div className="flex justify-between text-slate-500">
-                      <span className="text-sm">Remaining (due at appointment)</span>
-                      <span className="text-sm font-medium">{formatPrice((selectedService?.priceCents || 0) - depositAmountCents)}</span>
-                    </div>
-                  )}
-
-                  {/* Customer & Vehicle */}
-                  <div className="border-t border-slate-100 pt-3">
-                    <div className="bg-warm-50 rounded-xl p-4 space-y-1.5">
-                      <div className="text-sm"><strong>Name:</strong> {customerInfo.name}</div>
-                      {customerInfo.email && <div className="text-sm"><strong>Email:</strong> {customerInfo.email}</div>}
-                      {customerInfo.phone && <div className="text-sm"><strong>Phone:</strong> {customerInfo.phone}</div>}
-                      {(vehicleInfo.make || vehicleInfo.type) && (
-                        <div className="text-sm">
-                          <strong>{showPowersports ? 'Build:' : 'Vehicle:'}</strong>{' '}
-                          {[
-                            vehicleInfo.type ? formatVehicleType(vehicleInfo.type) : null,
-                            vehicleInfo.year,
-                            vehicleInfo.make,
-                            vehicleInfo.model,
-                            vehicleInfo.trim,
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Intake summary — dynamic or legacy */}
-                  {dynamicQuestions.length > 0 ? (
-                    Object.keys(dynamicIntakeValues).some((k) => {
-                      const v = dynamicIntakeValues[k];
-                      if (v === undefined || v === '') return false;
-                      if (Array.isArray(v) && v.length === 0) return false;
-                      if (typeof v === 'object' && !Array.isArray(v) && Object.keys(v as Record<string, unknown>).length === 0) return false;
-                      return true;
-                    }) && (
-                      <div className="border-t border-slate-200 pt-3 space-y-1">
-                        <div className="text-sm font-semibold text-slate-700">Service Details</div>
-                        {dynamicQuestions.map((q) => {
-                          const val = dynamicIntakeValues[q.id];
-                          if (val === undefined || val === '' || (Array.isArray(val) && val.length === 0)) return null;
-                          if (typeof val === 'object' && !Array.isArray(val) && Object.keys(val as Record<string, unknown>).length === 0) return null;
-                          return (
-                            <div key={q.id} className="text-sm">
-                              <strong>{q.question}:</strong>{' '}
-                              {typeof val === 'object' && !Array.isArray(val)
-                                ? Object.entries(val as Record<string, string>)
-                                    .map(([zoneId, shade]) => {
-                                      const label = zoneId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-                                      return `${label}: ${shade}`;
-                                    })
-                                    .join(', ')
-                                : Array.isArray(val)
-                                  ? val.join(', ')
-                                  : String(val)}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )
-                  ) : (
-                    showVehicle && !showPowersports && (intakeData.currentSetup || intakeData.existingMods.length > 0 || intakeData.knownIssues) && (
-                      <div className="border-t border-slate-200 pt-3 space-y-1">
-                        <div className="text-sm font-semibold text-slate-700">Vehicle Intake</div>
-                        {intakeData.currentSetup && (
-                          <div className="text-sm"><strong>Current setup:</strong> {intakeData.currentSetup.replace(/_/g, ' ')}</div>
-                        )}
-                        {intakeData.existingMods.length > 0 && (
-                          <div className="text-sm"><strong>Existing mods:</strong> {intakeData.existingMods.join(', ')}</div>
-                        )}
-                        {intakeData.knownIssues && (
-                          <div className="text-sm"><strong>Known issues:</strong> {intakeData.knownIssues}</div>
-                        )}
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
+              <StepConfirm
+                details={{
+                  service: selectedService,
+                  date: selectedDate,
+                  time: selectedTime,
+                  vehicle: vehicleInfo,
+                  customer: customerInfo,
+                  notes,
+                  deposit: { required: requiresDeposit, amountCents: depositAmountCents, paid: !!chargeId },
+                  merchant,
+                }}
+                intakeSummary={renderIntakeSummary()}
+              />
             )}
 
-            {/* ── Navigation ── */}
-            <div className="flex justify-between mt-10 pb-6">
-              <button
-                onClick={goBack}
-                disabled={stepIndex === 0}
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl disabled:invisible transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-              {step === 'confirm' ? (
-                <button
-                  onClick={handleBook}
-                  disabled={submitting}
-                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-8 py-3.5 rounded-xl text-base font-semibold font-display shadow-[0_2px_8px_rgba(5,150,105,0.25)] hover:shadow-[0_4px_16px_rgba(5,150,105,0.35)] transition-all"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Booking...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-5 h-5" /> Book Now
-                    </>
-                  )}
-                </button>
-              ) : step === 'payment' ? (
-                chargeId ? (
-                  <button
-                    onClick={goNext}
-                    className="btn-primary flex items-center gap-1.5 px-8 py-3.5 rounded-xl text-base font-display"
-                  >
-                    Next <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <div />
-                )
-              ) : (
-                <button
-                  onClick={goNext}
-                  disabled={!canAdvance()}
-                  className="btn-primary flex items-center gap-1.5 disabled:opacity-50 px-8 py-3.5 rounded-xl text-base font-display"
-                >
-                  Next <ChevronRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
+
+      <BookingFooter
+        stepIndex={stepIndex}
+        totalSteps={STEPS.length}
+        side={
+          step === 'service' && selectedService ? (
+            <FooterReadout label="Total Est." value={formatPrice(selectedService.priceCents)} />
+          ) : step === 'payment' ? (
+            <FooterReadout
+              label={chargeId ? 'Paid' : 'Deposit'}
+              value={formatPrice(depositAmountCents)}
+              accent={!chargeId}
+            />
+          ) : null
+        }
+        action={
+          step === 'confirm' ? (
+            <button
+              className="bk-btn bk-btn-primary"
+              onClick={handleBook}
+              disabled={submitting}
+            >
+              {submitting ? 'Booking…' : (
+                <>
+                  <Check style={{ width: '1.125rem', height: '1.125rem' }} />
+                  <span>Book Now</span>
+                </>
+              )}
+            </button>
+          ) : step === 'payment' && !chargeId ? (
+            <span style={{ minWidth: '8rem' }} aria-hidden="true" />
+          ) : (
+            <button
+              className="bk-btn bk-btn-primary"
+              onClick={goNext}
+              disabled={!canAdvance()}
+            >
+              <span>Continue</span>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="square"
+                aria-hidden="true"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          )
+        }
+      />
+    </BookingShell>
+  );
+}
+
+function FooterReadout({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        paddingRight: '1.5rem',
+        borderRight: '1px solid var(--bk-border-subtle)',
+      }}
+    >
+      <span
+        className="bk-mono"
+        style={{
+          fontSize: '0.6rem',
+          color: 'var(--bk-text-muted)',
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          marginBottom: '0.25rem',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className="bk-mono"
+        style={{
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: accent ? 'var(--bk-accent)' : 'var(--bk-text-main)',
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function IntakeSummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)',
+        gap: '1rem',
+        fontSize: '0.875rem',
+        alignItems: 'baseline',
+      }}
+    >
+      <span style={{ color: 'var(--bk-text-muted)' }}>{label}</span>
+      <span style={{ color: 'var(--bk-text-main)' }}>{value}</span>
     </div>
   );
 }

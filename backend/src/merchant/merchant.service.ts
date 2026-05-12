@@ -44,19 +44,35 @@ export class MerchantService {
     return merchant;
   }
 
-  async update(id: string, data: {
-    name?: string;
-    timezone?: string;
-    shopHours?: Record<string, unknown>;
-    settings?: Record<string, unknown>;
-  }) {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      timezone?: string;
+      shopHours?: Record<string, unknown>;
+      settings?: Record<string, unknown>;
+      accentColor?: string | null;
+    },
+  ) {
     const merchant = await this.findOne(id); // throws if not found
 
     // Merge settings so partial updates don't overwrite existing keys
     let mergedSettings: Prisma.InputJsonValue | undefined;
     if (data.settings) {
       const existing = (merchant.settings as Record<string, unknown>) ?? {};
-      mergedSettings = { ...existing, ...data.settings } as Prisma.InputJsonValue;
+      mergedSettings = {
+        ...existing,
+        ...data.settings,
+      } as Prisma.InputJsonValue;
+    }
+
+    // Validate accent color format if provided. Null is allowed (resets to vertical default).
+    if (data.accentColor !== undefined && data.accentColor !== null) {
+      if (!/^#[0-9a-fA-F]{6}$/.test(data.accentColor)) {
+        throw new Error(
+          `Invalid accentColor "${data.accentColor}" — must be a 6-digit hex like "#E01020"`,
+        );
+      }
     }
 
     return this.prisma.merchant.update({
@@ -64,18 +80,22 @@ export class MerchantService {
       data: {
         name: data.name,
         timezone: data.timezone,
-        shopHours: data.shopHours as Prisma.InputJsonValue ?? undefined,
+        shopHours: (data.shopHours as Prisma.InputJsonValue) ?? undefined,
         settings: mergedSettings,
+        accentColor: data.accentColor,
       },
     });
   }
 
-  async updateAvailability(merchantId: string, rules: {
-    dayOfWeek: number;
-    startTime: string;
-    endTime: string;
-    isBlocked?: boolean;
-  }[]) {
+  async updateAvailability(
+    merchantId: string,
+    rules: {
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+      isBlocked?: boolean;
+    }[],
+  ) {
     await this.findOne(merchantId); // throws if not found
 
     // Upsert each rule

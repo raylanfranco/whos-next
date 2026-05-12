@@ -1,4 +1,4 @@
-import { useImperativeHandle, forwardRef, useState, useEffect } from 'react';
+import { useImperativeHandle, forwardRef } from 'react';
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
@@ -21,9 +21,10 @@ interface Props {
   merchantId?: string;
   publishableKey?: string;
   onError?: (error: string) => void;
+  theme?: 'light' | 'dark';
 }
 
-const CARD_STYLE = {
+const LIGHT_CARD_STYLE = {
   base: {
     fontSize: '15px',
     color: '#1e293b',
@@ -33,7 +34,18 @@ const CARD_STYLE = {
   invalid: { color: '#dc2626' },
 };
 
-const InnerCardForm = forwardRef<StripeCardFormRef, Props>(({ onError }, ref) => {
+const DARK_CARD_STYLE = {
+  base: {
+    fontSize: '15px',
+    color: '#ffffff',
+    fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+    '::placeholder': { color: '#666666' },
+    iconColor: '#888888',
+  },
+  invalid: { color: '#E01020', iconColor: '#E01020' },
+};
+
+const InnerCardForm = forwardRef<StripeCardFormRef, Props>(({ onError, theme = 'light' }, ref) => {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -67,6 +79,37 @@ const InnerCardForm = forwardRef<StripeCardFormRef, Props>(({ onError }, ref) =>
     },
   }));
 
+  const cardStyle = theme === 'dark' ? DARK_CARD_STYLE : LIGHT_CARD_STYLE;
+  if (theme === 'dark') {
+    return (
+      <div>
+        <label
+          className="bk-mono"
+          style={{
+            display: 'block',
+            fontSize: '0.65rem',
+            color: 'var(--bk-text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.22em',
+            fontWeight: 700,
+            marginBottom: '0.75rem',
+          }}
+        >
+          Card Details
+        </label>
+        <div
+          style={{
+            background: 'var(--bk-bg-base)',
+            border: '1px solid var(--bk-border-subtle)',
+            padding: '1rem',
+            transition: 'border-color 0.15s ease',
+          }}
+        >
+          <CardElement options={{ style: cardStyle, hidePostalCode: false }} />
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-3">
       <div>
@@ -74,7 +117,7 @@ const InnerCardForm = forwardRef<StripeCardFormRef, Props>(({ onError }, ref) =>
           Card Details
         </label>
         <div className="premium-input p-3">
-          <CardElement options={{ style: CARD_STYLE, hidePostalCode: false }} />
+          <CardElement options={{ style: cardStyle, hidePostalCode: false }} />
         </div>
       </div>
     </div>
@@ -84,24 +127,33 @@ const InnerCardForm = forwardRef<StripeCardFormRef, Props>(({ onError }, ref) =>
 InnerCardForm.displayName = 'InnerCardForm';
 
 const StripeCardForm = forwardRef<StripeCardFormRef, Props>((props, ref) => {
-  const [ready, setReady] = useState(false);
-
   // Use per-merchant key if provided, fall back to env var
   const pk = props.publishableKey || ENV_STRIPE_PK;
 
-  useEffect(() => {
-    if (pk) setReady(true);
-  }, [pk]);
-
   if (!pk) {
+    if (props.theme === 'dark') {
+      return (
+        <p
+          className="bk-mono"
+          style={{
+            fontSize: '0.75rem',
+            color: 'var(--bk-accent)',
+            background: 'rgba(var(--bk-accent-rgb), 0.08)',
+            border: '1px solid rgba(var(--bk-accent-rgb), 0.25)',
+            padding: '0.75rem 1rem',
+            letterSpacing: '0.05em',
+          }}
+        >
+          Stripe is not configured for this merchant.
+        </p>
+      );
+    }
     return (
       <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
         Stripe is not configured for this merchant.
       </p>
     );
   }
-
-  if (!ready) return null;
 
   return (
     <Elements stripe={getStripe(pk)}>

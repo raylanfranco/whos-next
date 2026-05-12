@@ -39,6 +39,7 @@ export interface Merchant {
   plan: MerchantPlan;
   planActivatedAt?: string | null;
   vertical: MerchantVertical;
+  accentColor?: string | null;
   createdAt: string;
   updatedAt: string;
   services?: Service[];

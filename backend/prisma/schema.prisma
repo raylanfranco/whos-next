@@ -47,6 +47,10 @@ model Merchant {
   stripeSubscriptionId String?      @map("stripe_subscription_id")
   vertical         MerchantVertical @default(GENERIC)
 
+  // Branding — hex color used as the accent in the customer-facing booking flow.
+  // Null = derive from vertical (see frontend/src/booking/accent.ts).
+  accentColor      String?          @map("accent_color")
+
   // Direct auth (email/password) — used in this Clover-decoupled fork
   email            String?  @unique
   passwordHash     String?  @map("password_hash")

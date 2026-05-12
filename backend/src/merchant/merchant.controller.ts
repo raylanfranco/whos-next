@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Post, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Delete,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { MerchantService } from './merchant.service';
 
 @Controller('merchants')
@@ -23,11 +31,13 @@ export class MerchantController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       name?: string;
       timezone?: string;
       shopHours?: Record<string, unknown>;
       settings?: Record<string, unknown>;
+      accentColor?: string | null;
     },
   ) {
     return this.merchantService.update(id, body);
@@ -36,7 +46,8 @@ export class MerchantController {
   @Patch(':id/availability')
   updateAvailability(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       rules: {
         dayOfWeek: number;
         startTime: string;
