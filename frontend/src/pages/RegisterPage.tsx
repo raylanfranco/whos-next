@@ -1,24 +1,38 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../lib/api';
+import type { MerchantVertical } from '../types';
+
+const VERTICAL_OPTIONS: { value: MerchantVertical; label: string; hint: string }[] = [
+  { value: 'AUTOMOTIVE', label: 'Automotive', hint: 'Car audio, window tint, detail, install' },
+  { value: 'POWERSPORTS', label: 'Powersports', hint: 'Motorcycles, boats, ATVs, snowmobiles' },
+  { value: 'TATTOO', label: 'Tattoo studio', hint: 'Custom design, flash, cover-ups' },
+  { value: 'BEAUTY', label: 'Beauty / salon', hint: 'Hair, nails, lashes, spa' },
+  { value: 'GENERIC', label: 'Other', hint: 'Generic booking — no vertical-specific intake' },
+];
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [vertical, setVertical] = useState<MerchantVertical | ''>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!vertical) {
+      setError('Pick the type of shop you run');
+      return;
+    }
     setError(null);
     setLoading(true);
 
     try {
       const result = await api.post<{ token: string; merchant: { id: string; name: string } }>(
         '/auth/register',
-        { email, password, businessName },
+        { email, password, businessName, vertical },
       );
 
       localStorage.setItem('whosnext_token', result.token);
@@ -65,6 +79,34 @@ export default function RegisterPage() {
               className="premium-input w-full"
               placeholder="Your shop name"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+              What kind of shop? <span style={{ color: 'var(--color-accent)' }}>*</span>
+            </label>
+            <div className="grid grid-cols-1 gap-2">
+              {VERTICAL_OPTIONS.map((opt) => {
+                const isSelected = vertical === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setVertical(opt.value)}
+                    className="px-3 py-2.5 text-left transition-all"
+                    style={{
+                      background: isSelected ? 'var(--color-accent-muted)' : 'var(--color-accent-subtle)',
+                      border: `1px solid ${isSelected ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                      color: isSelected ? 'var(--color-accent)' : 'var(--color-text-primary)',
+                    }}
+                  >
+                    <div className="font-medium text-sm">{opt.label}</div>
+                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                      {opt.hint}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>Email</label>

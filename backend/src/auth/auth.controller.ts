@@ -9,13 +9,28 @@ export class AuthController {
 
   @Post('register')
   async register(
-    @Body() body: { email: string; password: string; businessName: string },
+    @Body() body: {
+      email: string;
+      password: string;
+      businessName: string;
+      vertical?: 'GENERIC' | 'AUTOMOTIVE' | 'TATTOO' | 'BEAUTY' | 'POWERSPORTS';
+    },
   ) {
     if (!body.email || !body.password || !body.businessName) {
       throw new BadRequestException('email, password, and businessName are required');
     }
 
-    return this.authService.register(body.email, body.password, body.businessName);
+    const VALID_VERTICALS = ['GENERIC', 'AUTOMOTIVE', 'TATTOO', 'BEAUTY', 'POWERSPORTS'] as const;
+    if (body.vertical && !VALID_VERTICALS.includes(body.vertical)) {
+      throw new BadRequestException(`vertical must be one of ${VALID_VERTICALS.join(', ')}`);
+    }
+
+    return this.authService.register(
+      body.email,
+      body.password,
+      body.businessName,
+      body.vertical,
+    );
   }
 
   @Post('login')

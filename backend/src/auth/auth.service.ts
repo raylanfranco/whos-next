@@ -17,7 +17,12 @@ export class AuthService {
   /**
    * Register a new merchant with email/password.
    */
-  async register(email: string, password: string, businessName: string) {
+  async register(
+    email: string,
+    password: string,
+    businessName: string,
+    vertical?: 'GENERIC' | 'AUTOMOTIVE' | 'TATTOO' | 'BEAUTY' | 'POWERSPORTS',
+  ) {
     // Check if email already exists
     const existing = await this.prisma.merchant.findUnique({
       where: { email },
@@ -33,6 +38,10 @@ export class AuthService {
         email,
         passwordHash,
         name: businessName,
+        // Schema default is GENERIC; we let callers override at signup so the
+        // booking flow (vehicle vs. tattoo vs. powersports adapter) is correct
+        // from the merchant's first login.
+        ...(vertical ? { vertical } : {}),
       },
     });
 
