@@ -4,3 +4,4 @@ dist
 .env.local
 /generated/prisma
 *.tsbuildinfo
+.DS_Store
