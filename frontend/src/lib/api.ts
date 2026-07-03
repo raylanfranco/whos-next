@@ -18,6 +18,24 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
 
+  // Sliding session: the backend hands back a fresh token as the current one
+  // ages, so an active user stays logged in indefinitely. Swap it in.
+  const refreshed = res.headers.get('X-Refreshed-Token');
+  if (refreshed) {
+    localStorage.setItem('whosnext_token', refreshed);
+  }
+
+  if (res.status === 401) {
+    // Token missing/expired/invalid — clear it and send the user to login.
+    // Skip the redirect on auth endpoints so a bad login just surfaces its error.
+    localStorage.removeItem('whosnext_token');
+    if (!path.startsWith('/auth/') && window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+    const body = await res.text();
+    throw new Error(`API error 401: ${body}`);
+  }
+
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`API error ${res.status}: ${body}`);

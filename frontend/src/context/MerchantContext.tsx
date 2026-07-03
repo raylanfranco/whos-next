@@ -28,17 +28,27 @@ export function MerchantProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchMerchant = useCallback(async () => {
-    if (!merchantId) {
+    const token = localStorage.getItem('whosnext_token');
+
+    // No token → not logged in. Send to login rather than showing an error.
+    if (!token) {
       setLoading(false);
-      setError('No merchant ID provided');
+      window.location.href = '/login';
       return;
     }
+
     setLoading(true);
     try {
-      const data = await api.get<Merchant>(`/merchants/${merchantId}`);
+      // Restore the session from the token. This is what lets the PWA reopen
+      // (via start_url = /dashboard, no ?merchant= param) and stay logged in.
+      // Fall back to the ?merchant= param for backward-compat links.
+      const data = merchantId
+        ? await api.get<Merchant>(`/merchants/${merchantId}`)
+        : await api.get<Merchant>('/auth/me');
       setMerchant(data);
       setError(null);
     } catch (err) {
+      // A 401 is already handled in api.ts (clears token + redirects to login).
       setError(err instanceof Error ? err.message : 'Failed to load merchant');
     } finally {
       setLoading(false);
