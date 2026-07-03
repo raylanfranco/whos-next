@@ -21,6 +21,8 @@ async function bootstrap() {
           'ionic://localhost',
         ],
     credentials: true,
+    // Let the browser read the sliding-session token the auth guard hands back.
+    exposedHeaders: ['X-Refreshed-Token'],
   });
 
   const port = process.env.PORT ?? 3001;

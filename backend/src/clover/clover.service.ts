@@ -190,6 +190,8 @@ export class CloverService {
   async getAccessToken(merchantId: string): Promise<string> {
     const merchant = await this.prisma.merchant.findUnique({
       where: { cloverMerchantId: merchantId },
+      // Global omit strips these; this OAuth refresh flow needs them.
+      omit: { cloverAccessToken: false, cloverRefreshToken: false },
     });
 
     if (!merchant?.cloverAccessToken) {

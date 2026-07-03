@@ -3,12 +3,29 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+// Require a real secret in production; fall back only for local dev.
+// A weak/known secret lets anyone forge tokens for any merchant.
+const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET must be set in production');
+    }
+    return 'dev-secret-change-me';
+  }
+  return secret;
+})();
 
 interface JwtPayload {
   sub: string; // merchant id
   email: string;
+  iat?: number; // issued-at (seconds), set by jsonwebtoken
 }
+
+const TOKEN_TTL = '30d';
+// Re-issue a fresh token once the current one is older than this, so an active
+// user's session slides forward and effectively never expires.
+const REFRESH_AFTER_SECONDS = 24 * 60 * 60; // 1 day
 
 @Injectable()
 export class AuthService {
@@ -63,6 +80,8 @@ export class AuthService {
   async login(email: string, password: string) {
     const merchant = await this.prisma.merchant.findUnique({
       where: { email },
+      // Global omit strips passwordHash; opt back in here so we can compare it.
+      omit: { passwordHash: false },
     });
 
     if (!merchant || !merchant.passwordHash) {
@@ -90,33 +109,46 @@ export class AuthService {
    * Validate a JWT token and return the merchant.
    */
   async validateToken(token: string) {
+    let payload: JwtPayload;
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
-
-      const merchant = await this.prisma.merchant.findUnique({
-        where: { id: payload.sub },
-        include: {
-          services: true,
-          availabilityRules: true,
-          blockedDates: true,
-        },
-      });
-
-      if (!merchant) {
-        throw new UnauthorizedException('Merchant not found');
-      }
-
-      return merchant;
+      payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
+
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: payload.sub },
+      include: {
+        services: true,
+        availabilityRules: true,
+        blockedDates: true,
+      },
+    });
+
+    if (!merchant) {
+      throw new UnauthorizedException('Merchant not found');
+    }
+
+    return { merchant, payload };
+  }
+
+  /**
+   * Given a still-valid token's payload, return a freshly-signed token if the
+   * current one is old enough to warrant sliding the session forward, else null.
+   * Lets an active user stay logged in indefinitely without a refresh-token store.
+   */
+  maybeRefreshToken(payload: JwtPayload): string | null {
+    if (!payload.iat) return null;
+    const ageSeconds = Math.floor(Date.now() / 1000) - payload.iat;
+    if (ageSeconds < REFRESH_AFTER_SECONDS) return null;
+    return this.signToken(payload.sub, payload.email);
   }
 
   private signToken(merchantId: string, email: string): string {
     return jwt.sign(
       { sub: merchantId, email } satisfies JwtPayload,
       JWT_SECRET,
-      { expiresIn: '7d' },
+      { expiresIn: TOKEN_TTL },
     );
   }
 }
