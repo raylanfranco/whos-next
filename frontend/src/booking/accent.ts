@@ -32,3 +32,22 @@ export function accentCssVars(accent: string): Record<string, string> {
     '--bk-accent-rgb': `${r}, ${g}, ${b}`,
   };
 }
+
+/**
+ * The full app-level accent variable family (dashboard chrome, not just the
+ * booking flow). Mirrors the defaults hardcoded in index.css :root so a
+ * merchant's chosen color re-themes buttons, nav highlights, borders, and glows.
+ * Keep the alpha values in sync with index.css if those defaults change.
+ */
+export function appAccentCssVars(accent: string): Record<string, string> {
+  const { r, g, b } = hexToRgb(accent);
+  const rgb = `${r}, ${g}, ${b}`;
+  return {
+    '--color-accent': accent,
+    '--color-accent-dim': `rgba(${rgb}, 0.6)`,
+    '--color-accent-muted': `rgba(${rgb}, 0.15)`,
+    '--color-accent-subtle': `rgba(${rgb}, 0.05)`,
+    '--color-border-accent': `rgba(${rgb}, 0.15)`,
+    '--color-border-accent-strong': `rgba(${rgb}, 0.3)`,
+  };
+}

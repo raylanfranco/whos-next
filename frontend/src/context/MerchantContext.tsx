@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { resolveAccent, appAccentCssVars } from '../booking/accent';
 import type { Merchant } from '../types';
 
 interface MerchantContextValue {
@@ -58,6 +59,23 @@ export function MerchantProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchMerchant();
   }, [fetchMerchant]);
+
+  // Theme the whole dashboard app with the merchant's chosen accent color
+  // (falls back to the vertical default). Mirrors the booking-flow accent so
+  // "Booking Appearance" now drives the app chrome too. Re-runs on refetch,
+  // so saving a new color in Settings updates the app immediately.
+  useEffect(() => {
+    if (!merchant) return;
+    const accent = resolveAccent({
+      accentColor: merchant.accentColor ?? null,
+      vertical: merchant.vertical,
+    });
+    const root = document.documentElement;
+    const vars = appAccentCssVars(accent);
+    for (const [key, value] of Object.entries(vars)) {
+      root.style.setProperty(key, value);
+    }
+  }, [merchant]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('whosnext_token');

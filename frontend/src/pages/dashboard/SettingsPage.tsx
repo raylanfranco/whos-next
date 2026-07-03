@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Save, Trash2, Plus, CreditCard, MessageSquare, Unplug, CheckCircle, ExternalLink, Palette } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useMerchant } from '../../context/MerchantContext';
-import PlanGate from '../../components/PlanGate';
+// import PlanGate from '../../components/PlanGate'; // Upgrade-to-Pro gates disabled — see SMS/Stripe sections below
 import { resolveAccent } from '../../booking/accent';
 import type { AvailabilityRule, BlockedDate } from '../../types';
 
@@ -435,7 +435,8 @@ export default function SettingsPage() {
       </section>
 
       {/* SMS Notifications */}
-      <PlanGate feature="SMS notifications">
+      {/* Upgrade-to-Pro gate disabled — current clients (Ben, Billy) are grandfathered. Re-wrap in <PlanGate feature="SMS notifications"> to restore. */}
+      {/* <PlanGate feature="SMS notifications"> */}
       <section className="glass-panel-static p-6">
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="w-5 h-5" style={{ color: 'var(--color-accent)' }} />
@@ -488,7 +489,7 @@ export default function SettingsPage() {
           </button>
         </div>
       </section>
-      </PlanGate>
+      {/* </PlanGate> */}
 
       {/* Availability */}
       <section className="glass-panel-static p-6">
@@ -586,7 +587,8 @@ export default function SettingsPage() {
       </section>
 
       {/* Stripe Connect */}
-      <PlanGate feature="Stripe payments">
+      {/* Upgrade-to-Pro gate disabled — current clients (Ben, Billy) are grandfathered. Re-wrap in <PlanGate feature="Stripe payments"> to restore. */}
+      {/* <PlanGate feature="Stripe payments"> */}
       <section className="glass-panel-static p-6 tech-bracket">
         <h2 className="text-lg font-semibold text-white mb-4 font-display flex items-center gap-2">
           <CreditCard className="w-5 h-5" style={{ color: 'var(--color-accent)' }} />
@@ -629,7 +631,7 @@ export default function SettingsPage() {
           </div>
         )}
       </section>
-      </PlanGate>
+      {/* </PlanGate> */}
 
       </div>{/* close grid */}
 
