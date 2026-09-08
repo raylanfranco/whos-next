@@ -41,7 +41,7 @@ export class BookingService {
     from?: string;
     to?: string;
   }) {
-    return this.prisma.booking.findMany({
+    const bookings = await this.prisma.booking.findMany({
       where: {
         merchantId,
         ...(filters?.status ? { status: filters.status } : {}),
@@ -57,6 +57,7 @@ export class BookingService {
       include: BOOKING_INCLUDE,
       orderBy: { startsAt: 'desc' },
     });
+    return bookings.map(booking => ({ ...booking, allowedStatuses: VALID_TRANSITIONS[booking.status] }));
   }
 
   async findOne(id: string) {

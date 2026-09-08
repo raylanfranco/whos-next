@@ -1,3 +1,4 @@
+import { MerchantAccess } from '../auth/merchant-access.guard';
 import { Controller, Get, Post, Patch, Delete, Query, Param, Body } from '@nestjs/common';
 import { ServiceService } from './service.service';
 
@@ -19,6 +20,7 @@ export class ServiceController {
   }
 
   @Post()
+  @MerchantAccess('merchant', 'body', 'merchantId')
   create(@Body() body: {
     merchantId: string;
     name: string;
@@ -32,6 +34,7 @@ export class ServiceController {
   }
 
   @Patch(':id')
+  @MerchantAccess('service', 'params', 'id')
   update(@Param('id') id: string, @Body() body: {
     name?: string;
     description?: string;
@@ -45,6 +48,7 @@ export class ServiceController {
   }
 
   @Delete(':id')
+  @MerchantAccess('service', 'params', 'id')
   remove(@Param('id') id: string) {
     return this.serviceService.remove(id);
   }
