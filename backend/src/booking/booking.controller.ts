@@ -1,3 +1,4 @@
+import { MerchantAccess } from '../auth/merchant-access.guard';
 import { Controller, Get, Post, Patch, Delete, Query, Param, Body } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import type { BookingStatus } from '@prisma/client';
@@ -7,6 +8,7 @@ export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
   @Get()
+  @MerchantAccess('merchant', 'query', 'merchantId')
   findAll(
     @Query('merchantId') merchantId: string,
     @Query('status') status?: BookingStatus,
@@ -17,6 +19,7 @@ export class BookingController {
   }
 
   @Get('stats')
+  @MerchantAccess('merchant', 'query', 'merchantId')
   getStats(
     @Query('merchantId') merchantId: string,
     @Query('from') from: string,
@@ -35,12 +38,13 @@ export class BookingController {
   }
 
   @Get(':id')
+  @MerchantAccess('booking', 'params', 'id')
   findOne(@Param('id') id: string) {
     return this.bookingService.findOne(id);
   }
 
   @Post()
-  create(@Body() body: {
+  async create(@Body() body: {
     merchantId: string;
     serviceId: string;
     date: string;
@@ -53,10 +57,14 @@ export class BookingController {
     cloverChargeId?: string;
     isWalkIn?: boolean;
   }) {
-    return this.bookingService.create(body);
+    const booking = await this.bookingService.create(body);
+    // Confirmation needs only the new reservation identifier. Never return an
+    // existing customer's contact record to an unauthenticated booker.
+    return { id: booking.id, status: booking.status, startsAt: booking.startsAt, endsAt: booking.endsAt };
   }
 
   @Patch(':id/status')
+  @MerchantAccess('booking', 'params', 'id')
   updateStatus(
     @Param('id') id: string,
     @Body() body: { status: BookingStatus },
@@ -65,6 +73,7 @@ export class BookingController {
   }
 
   @Delete(':id')
+  @MerchantAccess('booking', 'params', 'id')
   remove(@Param('id') id: string) {
     return this.bookingService.remove(id);
   }

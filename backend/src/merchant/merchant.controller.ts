@@ -1,3 +1,4 @@
+import { MerchantAccess } from '../auth/merchant-access.guard';
 import {
   Controller,
   Get,
@@ -29,6 +30,7 @@ export class MerchantController {
   }
 
   @Patch(':id')
+  @MerchantAccess('merchant', 'params', 'id')
   update(
     @Param('id') id: string,
     @Body()
@@ -44,6 +46,7 @@ export class MerchantController {
   }
 
   @Patch(':id/availability')
+  @MerchantAccess('merchant', 'params', 'id')
   updateAvailability(
     @Param('id') id: string,
     @Body()
@@ -60,6 +63,7 @@ export class MerchantController {
   }
 
   @Post(':id/blocked-dates')
+  @MerchantAccess('merchant', 'params', 'id')
   addBlockedDate(
     @Param('id') id: string,
     @Body() body: { date: string; reason?: string },
@@ -68,6 +72,7 @@ export class MerchantController {
   }
 
   @Delete('blocked-dates/:blockedDateId')
+  @MerchantAccess('blockedDate', 'params', 'blockedDateId')
   removeBlockedDate(@Param('blockedDateId') blockedDateId: string) {
     return this.merchantService.removeBlockedDate(blockedDateId);
   }
